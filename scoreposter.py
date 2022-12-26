@@ -46,37 +46,39 @@ print("making initial score request...")
 initial_data = inital_response.json()
 
 # extract the relevant information from the response
-beatmap_id = initial_data[0]["beatmap_id"]
-score_max = initial_data[0]["maxcombo"]
-score_miss = initial_data[0]["countmiss"]
-accuracy = (int(initial_data[0]["count300"]) + int(initial_data[0]["count100"]) + (int(initial_data[0]["count50"]) / 2)) / (int(initial_data[0]["count300"])) + int(initial_data[0]["count100"]) + (int(initial_data[0]["count50"]))
+beatmap_id, score_max, n300, n100, n50, nmiss, perfect, int_mods = (
+    initial_data[0]["beatmap_id"], 
+    initial_data[0]["maxcombo"], 
+    int(initial_data[0]["count300"]), 
+    int(initial_data[0]["count100"]), 
+    int(initial_data[0]["count100"]), 
+    int(initial_data[0]["countmiss"]), 
+    initial_data[0]["perfect"], 
+    int(initial_data[0]["enabled_mods"])
+)
+accuracy = (n300 + n100 + n50 / 2) / (n300 + n100 + n50 + nmiss)
 formatted_accuracy = format(accuracy, '.2f')
-perfect = initial_data[0]["perfect"]
-int_mods = initial_data[0]["enabled_mods"]
-readable_mods = int_to_readable(int(initial_data[0]["enabled_mods"]))
+readable_mods = int_to_readable(int(int_mods))
 
 print("made!")
 
 print("making the score's map request...")
 map_response = requests.get(f"https://osu.ppy.sh/api/get_beatmaps?k={api_key}&b={beatmap_id}&limit=1")
-
 map_data = map_response.json()
 
-artist = map_data[0]["artist"]
-title = map_data[0]["title"]
-creator = map_data[0]["creator"]
-diff = map_data[0]["version"]
-sr = round(float(map_data[0]["difficultyrating"]), 2)
-map_max = map_data[0]["max_combo"]
+artist, title, creator, diff, sr, map_max = (
+    map_data[0]["artist"],
+    map_data[0]["title"],
+    map_data[0]["creator"],
+    map_data[0]["version"],
+    round(float(map_data[0]["difficultyrating"]), 2),
+    map_data[0]["max_combo"],
+)
 
 print("made!")
 print("creating the scorepost...")
 
-if int_mods == 0:
-    mods = ""
-else:
-    mod_string = ''.join(readable_mods)
-    mods = (f"+{mod_string}")
+mods = "" if int_mods == 0 else " +" + ''.join(readable_mods)
 
 get_osu_file = requests.get(f"https://old.ppy.sh/osu/{beatmap_id}", stream=True)
 
@@ -87,28 +89,27 @@ with open("beatmap.osu", "wb") as f:
 map = Beatmap(bytes=open("beatmap.osu", "rb").read())
 calc = Calculator(mode=0, mods=int(int_mods))
 calc.set_acc(int(accuracy))
-calc.set_n300(int(initial_data[0]["count300"]))
-calc.set_n100(int(initial_data[0]["count100"]))
-calc.set_n50(int(initial_data[0]["count50"]))
-calc.set_n_misses(int(score_miss))
+calc.set_n300(n300)
+calc.set_n100(n100)
+calc.set_n50(n50)
+calc.set_n_misses(nmiss)
 calc.set_combo(int(score_max))
 
 pp = calc.performance(map)
 
-if int(score_miss) > 0 and perfect != 1:
-    miss_string = f" {score_miss}❌ "
+if perfect == 1:
+    combo = "FC"
+    max_pp_string = ""
+else:
+    miss_string = f" {nmiss}❌ "
     combo = f"{score_max}x/{map_max}x"
     calc.set_n_misses(0)
     calc.set_combo(int(map_max))
     max_pp = calc.performance(map)
     max_pp_string = f"({round(max_pp.pp)}pp if FC)"
-else:
-    combo = "FC"
-    max_pp_string = ""
 
-# make the scorepost
-scorepost = f"{args.username} | {artist} - {title} [{diff}] (mapped by {creator}, {sr}*) {mods} {formatted_accuracy}% {combo}{miss_string}{round(pp.pp)}pp {max_pp_string} "
+scorepost = f"{args.username} | {artist} - {title} [{diff}] (mapped by {creator}, {sr}*){mods} {formatted_accuracy}% {combo}{miss_string}{round(pp.pp)}pp {max_pp_string} "
 
-# print it to the console
+# print the scorepost to the console
 print(f"\n{scorepost}")
 print("\ncompleted!")
