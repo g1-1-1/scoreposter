@@ -1,0 +1,3 @@
+python-dotenv==0.21.0
+requests==2.22.0
+rosu_pp_py==0.9.1
