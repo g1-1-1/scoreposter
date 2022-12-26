@@ -14,6 +14,9 @@ for example, if you want to grab mrekk's last play:
 ![example](https://file.coffee/u/8EI9gl0pC8sMBB9njQjcD.png)
 
 please report any bugs in the issues tab
+
 do whatever you want with the code
+
 if you have meaningful changes open a PR
+
 thanks
