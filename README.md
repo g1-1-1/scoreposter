@@ -3,12 +3,14 @@ a python script that generates /r/osugame scorepost titles
 
 
 ## how to use
-1. [get your api key](https://osu.ppy.sh/p/api)
-2. put your api key in .env
-3. [install python](https://www.python.org/downloads/)
-4. open your console where you have this repository in
-5. run `pip install -r requirements.txt`
-6. if everything is successful, in your console, run `python scoreposter.py -u [username]`
+1. [install git](https://git-scm.com/)
+2. clone this repo (e.g. `git clone https://github.com/0i8/scoreposter.git`)
+3. [get your api key](https://osu.ppy.sh/p/api)
+4. put your api key in .env
+5. [install python](https://www.python.org/downloads/)
+6. open your console where you have this repository in
+7. run `pip install -r requirements.txt`
+8. if everything is successful, in your console, run `python scoreposter.py -u [username]`
 for example, if you want to grab mrekk's last play:
 
 ![example](https://file.coffee/u/8EI9gl0pC8sMBB9njQjcD.png)
