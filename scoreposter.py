@@ -66,12 +66,11 @@ print("making the score's map request...")
 map_response = requests.get(f"https://osu.ppy.sh/api/get_beatmaps?k={api_key}&b={beatmap_id}&limit=1")
 map_data = map_response.json()
 
-artist, title, creator, diff, sr, map_max = (
+artist, title, creator, diff, map_max = (
     map_data[0]["artist"],
     map_data[0]["title"],
     map_data[0]["creator"],
     map_data[0]["version"],
-    round(float(map_data[0]["difficultyrating"]), 2),
     map_data[0]["max_combo"],
 )
 
@@ -96,6 +95,7 @@ calc.set_n_misses(nmiss)
 calc.set_combo(int(score_max))
 
 pp = calc.performance(map)
+sr = round(float(pp.difficulty.stars), 2)
 
 if perfect == 1:
     combo = "FC"
