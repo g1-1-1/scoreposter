@@ -53,7 +53,7 @@ def scorepost(username):
     # make a request to the osu! API to retrieve the user's most recent play
 
     inital_response = requests.get(f"https://osu.ppy.sh/api/get_user_recent?k={osu_api_key}&u={username}&limit=1")
-    print("making initial score request...")
+    print("making initial score request for {username}...")
 
     # parse the response as JSON
     initial_data = inital_response.json()
@@ -73,7 +73,7 @@ def scorepost(username):
     formatted_accuracy = format(accuracy, '.2f')
     readable_mods = int_to_readable(int(int_mods))
 
-    print("made!")
+    print("done!")
 
     print("making the score's map request...")
     map_response = requests.get(f"https://osu.ppy.sh/api/get_beatmaps?k={osu_api_key}&b={beatmap_id}&limit=1")
@@ -87,8 +87,8 @@ def scorepost(username):
         map_data[0]["max_combo"],
     )
 
-    print("made!")
-    print("creating the scorepost...")
+    print("done!")
+    print("creating the scorepost for {username} latest's play...")
 
     mods = "" if int_mods == 0 else " +" + ''.join(readable_mods)
 
@@ -131,7 +131,7 @@ def scorepost(username):
 bot = commands.Bot(command_prefix='.', intents=discord.Intents.all())
 
 @bot.event
-async def onReady():
+async def on_ready():
     print("Discord bot is up")
     try:
         synced = await bot.tree.sync()
@@ -150,7 +150,7 @@ async def scoreposter(interaction: discord.Interaction, osu_user : str):
     bot.osu_user = osu_user
     
 
-bot.run(token=discord_token)
+bot.run(discord_token)
 
 
 
