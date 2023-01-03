@@ -138,7 +138,7 @@ def scorepost(username : str, link : bool):
         max_pp = calc.performance(map)
         max_pp_string = f"({round(max_pp.pp)}pp if FC)"
 
-    scorepost = f"{username} | {artist} - {title} [{diff}] (mapped by {creator}, {sr}*){mods} {formatted_accuracy}% {combo}{miss_string}{round(pp.pp)}pp {max_pp_string} "
+    scorepost = f"{username} | {artist} - {title} [{diff}] ({creator}, {sr}*){mods} {formatted_accuracy}% {combo}{miss_string}{round(pp.pp)}pp {max_pp_string} "
 
     return scorepost
 
@@ -166,16 +166,13 @@ async def on_ready():
 async def scoreposter(interaction: discord.Interaction, osu_user : str):
     await interaction.response.send_message(f"```{scorepost(osu_user, False)}```", ephemeral=False)
 
-# command for discord to request scorepost from link
+# # command for discord to request scorepost from link
 
-@bot.tree.command(name="scorepost-link", description="This command will generate a scorepost title you can use in /r/osugame from a score link")
-@app_commands.describe(score_link="The link of the score you want to generate a scorepost title")
-@app_commands.rename(score_link="score-link")
-async def scoreposter(interaction: discord.Interaction, score_link : str):
-    await interaction.response.send_message(f"{scorepost(score_link, True)}", ephemeral=False)
+# @bot.tree.command(name="scorepost-link", description="This command will generate a scorepost title you can use in /r/osugame from a score link")
+# @app_commands.describe(score_link="The link of the score you want to generate a scorepost title")
+# @app_commands.rename(score_link="score-link")
+# async def scoreposter(interaction: discord.Interaction, score_link : str):
+#     await interaction.response.send_message(f"{scorepost(score_link, True)}", ephemeral=False)
     
 
 bot.run(discord_token)
-
-
-
