@@ -149,7 +149,7 @@ bot = commands.Bot(command_prefix='.', intents=discord.Intents.all())
 
 @bot.event
 async def on_ready():
-    await client.change_presence(status=discord.Status.Online, activity=discord.game('osu!'))
+    await bot.change_presence(status=discord.Status.online, activity=discord.Game("osu!"))
     print("Discord bot is up")
     try:
         synced = await bot.tree.sync()
