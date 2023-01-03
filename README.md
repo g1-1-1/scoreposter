@@ -16,7 +16,7 @@ An Open Source discord bot that utilizes [Oi8's tool](https://github.com/0i8/sco
 1. run the command `/scorepost`
 for example, if you want to grab mrekk's last play:
 
-![example](readme-pics/example.webm)
+![example](readme-pics/example.gif)
 
 please report any bugs in the issues tab
 if you have meaningful changes open a PR
