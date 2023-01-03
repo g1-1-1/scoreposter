@@ -69,8 +69,7 @@ def scorepost(username):
         initial_data[0]["perfect"], 
         int(initial_data[0]["enabled_mods"])
     )
-    accuracy = (n300 + n100 + n50 / 2) / (n300 + n100 + n50 + nmiss)
-    formatted_accuracy = format(accuracy, '.2f')
+    accuracy = format(min(100.0 * ((n300 * 300.0) + (n100 * 100.0) + (n50 * 50.0)) / ((n300 + n100 + n50 + nmiss) * 300.0), 100), '.2f')
     readable_mods = int_to_readable(int(int_mods))
 
     print("done!")
@@ -100,7 +99,7 @@ def scorepost(username):
 
     map = Beatmap(bytes=open("beatmap.osu", "rb").read())
     calc = Calculator(mode=0, mods=int(int_mods))
-    calc.set_acc(int(accuracy))
+    calc.set_acc(accuracy)
     calc.set_n300(n300)
     calc.set_n100(n100)
     calc.set_n50(n50)
@@ -121,7 +120,7 @@ def scorepost(username):
         max_pp = calc.performance(map)
         max_pp_string = f"({round(max_pp.pp)}pp if FC)"
 
-    scorepost = f"{username} | {artist} - {title} [{diff}] (mapped by {creator}, {sr}*){mods} {formatted_accuracy}% {combo}{miss_string}{round(pp.pp)}pp {max_pp_string} "
+    scorepost = f"{username} | {artist} - {title} [{diff}] (mapped by {creator}, {sr}*){mods} {accuracy}% {combo}{miss_string}{round(pp.pp)}pp {max_pp_string} "
 
     return scorepost
 
