@@ -64,13 +64,17 @@ def scorepost(username):
         initial_data[0]["maxcombo"], 
         int(initial_data[0]["count300"]), 
         int(initial_data[0]["count100"]), 
-        int(initial_data[0]["count100"]), 
+        int(initial_data[0]["count50"]), 
         int(initial_data[0]["countmiss"]), 
         initial_data[0]["perfect"], 
         int(initial_data[0]["enabled_mods"])
     )
-    accuracy = format(min(100.0 * ((n300 * 300.0) + (n100 * 100.0) + (n50 * 50.0)) / ((n300 + n100 + n50 + nmiss) * 300.0), 100), '.2f')
+    # accuracy = format(min(100.0 * ((n300 * 300.0) + (n100 * 100.0) + (n50 * 50.0)) / ((n300 + n100 + n50 + nmiss) * 300.0), 100), '.2f')
+    accuracy = (n300 + n100 + n50 / 2) / (n300 + n100 + n50 + nmiss)
+    formatted_accuracy = format(accuracy, '.2f')
     readable_mods = int_to_readable(int(int_mods))
+
+    print("300: {n300}, 100")
 
     print("done!")
 
@@ -120,7 +124,7 @@ def scorepost(username):
         max_pp = calc.performance(map)
         max_pp_string = f"({round(max_pp.pp)}pp if FC)"
 
-    scorepost = f"{username} | {artist} - {title} [{diff}] (mapped by {creator}, {sr}*){mods} {accuracy}% {combo}{miss_string}{round(pp.pp)}pp {max_pp_string} "
+    scorepost = f"{username} | {artist} - {title} [{diff}] (mapped by {creator}, {sr}*){mods} {formatted_accuracy}% {combo}{miss_string}{round(pp.pp)}pp {max_pp_string} "
 
     return scorepost
 
