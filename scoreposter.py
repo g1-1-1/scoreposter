@@ -145,7 +145,7 @@ def scorepost(username : str, link : bool):
 
 # start discord bot
 
-bot = commands.Bot(command_prefix='.', intents=discord.Intents.all())
+bot = commands.Bot(command_prefix='.', intents=discord.Intents.none())
 
 @bot.event
 async def on_ready():
