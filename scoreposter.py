@@ -145,7 +145,7 @@ async def onReady():
 @bot.tree.command(name="scorepost", description="This command will generate a scorepost title you can use in /r/osugame")
 @app_commands.describe(osu_user="The username of the player you want to generate a scorepost title")
 @app_commands.rename(osu_user="username")
-async def scorepost(interaction: discord.Interaction, osu_user : str):
+async def scoreposter(interaction: discord.Interaction, osu_user : str):
     await interaction.response.send_message(f"{scorepost(osu_user)}", ephemeral=False)
     bot.osu_user = osu_user
     
