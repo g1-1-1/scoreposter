@@ -146,9 +146,9 @@ async def onReady():
 @app_commands.describe(osu_user="The username of the player you want to generate a scorepost title")
 @app_commands.rename(osu_user="username")
 async def scorepost(interaction: discord.Interaction, osu_user : str):
-    await interaction.response.send_message(f"{bot.osu_user}", ephemeral=True)
+    await interaction.response.send_message(f"{scorepost(osu_user)}", ephemeral=False)
     bot.osu_user = osu_user
-    scorepost(osu_user)
+    
 
 bot.run(token=discord_token)
 
