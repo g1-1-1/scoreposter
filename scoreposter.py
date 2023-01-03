@@ -63,13 +63,10 @@ async def onReady():
 @app_commands.describe(osu_user="The username of the player you want to generate a scorepost title")
 @app_commands.rename(osu_user="Username on osu!")
 async def scorepost(interaction: discord.Interaction, osu_user : str):
-    await interaction.response.send_message(f"{osu_user}", ephemeral=True)
-    global osu_username
-    osu_username = osu_user
+    await interaction.response.send_message(f"{bot.osu_user}", ephemeral=True)
+    bot.osu_user = osu_user
 
-
-
-def scorepost(username = osu_username):
+def scorepost(username = bot.osu_user):
 
     # make a request to the osu! API to retrieve the user's most recent play
 
