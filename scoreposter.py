@@ -1,5 +1,6 @@
 import requests
 import os
+import re
 from typing import List
 from rosu_pp_py import Beatmap, Calculator
 from dotenv import load_dotenv
@@ -48,15 +49,27 @@ elif discord_token == "EDIT THIS WITH YOUR DISCORD BOT TOKEN":
     print("You need to add the discord bot token in the .env file!")
     exit()
 
-def scorepost(username):
+def scorepost(username : str, link : bool):
 
     # make a request to the osu! API to retrieve the user's most recent play
+    if link == False:
+        inital_response_user = requests.get(f"https://osu.ppy.sh/api/get_user_recent?k={osu_api_key}&u={username}&limit=1")
+        print(f"making initial score request for {username}...")
 
-    inital_response = requests.get(f"https://osu.ppy.sh/api/get_user_recent?k={osu_api_key}&u={username}&limit=1")
-    print("making initial score request for {username}...")
+        # parse the response as JSON
+        initial_data = inital_response_user.json()
 
-    # parse the response as JSON
-    initial_data = inital_response.json()
+    #regex to check if it's a score link
+
+    elif link and re.search("https://osu\.ppy\.sh/scores/[a-zA-Z]+//([1-9][0-9]*)|0/", username):
+        initial_response_link = requests.get(f"https://osu.ppy.sh/api/get_user_recent?k={osu_api_key}&u={username}&limit=1")
+        print(f"making initial score request for {username}...")
+
+        # parse the response as JSON
+        initial_data = initial_response_link.json()
+    
+    elif link and re.search("https://osu\.ppy\.sh/scores/[a-zA-Z]+//([1-9][0-9]*)|0/", username) == False:
+        return "Not an osu! score link"
 
     # extract the relevant information from the response
     beatmap_id, score_max, n300, n100, n50, nmiss, perfect, int_mods = (
@@ -70,11 +83,12 @@ def scorepost(username):
         int(initial_data[0]["enabled_mods"])
     )
     # accuracy = format(min(100.0 * ((n300 * 300.0) + (n100 * 100.0) + (n50 * 50.0)) / ((n300 + n100 + n50 + nmiss) * 300.0), 100), '.2f')
-    accuracy = (n300 + n100 + n50 / 2) / (n300 + n100 + n50 + nmiss)
+    # accuracy = (n300 + n100 + n50 / 2) / (n300 + n100 + n50 + nmiss)
+    accuracy = 100*((300*n300 + 100*n100 + 50*n50) / (300*(n300 + n100 + n50 + nmiss)))
     formatted_accuracy = format(accuracy, '.2f')
     readable_mods = int_to_readable(int(int_mods))
 
-    print("300: {n300}, 100")
+    print(f"{n300} {n100} {n50} {nmiss}")
 
     print("done!")
 
@@ -91,7 +105,7 @@ def scorepost(username):
     )
 
     print("done!")
-    print("creating the scorepost for {username} latest's play...")
+    print(f"creating the scorepost for {username} latest's play...")
 
     mods = "" if int_mods == 0 else " +" + ''.join(readable_mods)
 
@@ -143,14 +157,21 @@ async def on_ready():
         print(e)
 
 
-# command for discord to request the scorepost
+# command for discord to request the scorepost from last play
 
-@bot.tree.command(name="scorepost", description="This command will generate a scorepost title you can use in /r/osugame")
+@bot.tree.command(name="scorepost", description="This command will generate a scorepost title you can use in /r/osugame from an user's last play")
 @app_commands.describe(osu_user="The username of the player you want to generate a scorepost title")
 @app_commands.rename(osu_user="username")
 async def scoreposter(interaction: discord.Interaction, osu_user : str):
-    await interaction.response.send_message(f"{scorepost(osu_user)}", ephemeral=False)
-    bot.osu_user = osu_user
+    await interaction.response.send_message(f"{scorepost(osu_user, False)}", ephemeral=False)
+
+# command for discord to request scorepost from link
+
+@bot.tree.command(name="scorepost-link", description="This command will generate a scorepost title you can use in /r/osugame from a score link")
+@app_commands.describe(score_link="The link of the score you want to generate a scorepost title")
+@app_commands.rename(score_link="score-link")
+async def scoreposter(interaction: discord.Interaction, score_link : str):
+    await interaction.response.send_message(f"{scorepost(score_link, True)}", ephemeral=False)
     
 
 bot.run(discord_token)
