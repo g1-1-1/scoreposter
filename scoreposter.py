@@ -48,25 +48,7 @@ elif discord_token == "EDIT THIS WITH YOUR DISCORD BOT TOKEN":
     print("You need to add the discord bot token in the .env file!")
     exit()
 
-# start discord bot
-
-bot = commands.Bot(command_prefix='.', intents=discord.Intents.all())
-
-@bot.event
-async def onReady():
-    print("Discord bot is up")
-
-
-# command for discord to request the scorepost
-
-@bot.tree.command(name="scorepost", description="This command will generate a scorepost title you can use in /r/osugame")
-@app_commands.describe(osu_user="The username of the player you want to generate a scorepost title")
-@app_commands.rename(osu_user="Username on osu!")
-async def scorepost(interaction: discord.Interaction, osu_user : str):
-    await interaction.response.send_message(f"{bot.osu_user}", ephemeral=True)
-    bot.osu_user = osu_user
-
-def scorepost(username = bot.osu_user):
+def scorepost(username):
 
     # make a request to the osu! API to retrieve the user's most recent play
 
@@ -141,7 +123,29 @@ def scorepost(username = bot.osu_user):
 
     scorepost = f"{username} | {artist} - {title} [{diff}] (mapped by {creator}, {sr}*){mods} {formatted_accuracy}% {combo}{miss_string}{round(pp.pp)}pp {max_pp_string} "
 
-    # print the scorepost to the console
     return scorepost
+
+
+# start discord bot
+
+bot = commands.Bot(command_prefix='.', intents=discord.Intents.all())
+
+@bot.event
+async def onReady():
+    print("Discord bot is up")
+
+
+# command for discord to request the scorepost
+
+@bot.tree.command(name="scorepost", description="This command will generate a scorepost title you can use in /r/osugame")
+@app_commands.describe(osu_user="The username of the player you want to generate a scorepost title")
+@app_commands.rename(osu_user="Username on osu!")
+async def scorepost(interaction: discord.Interaction, osu_user : str):
+    await interaction.response.send_message(f"{bot.osu_user}", ephemeral=True)
+    bot.osu_user = osu_user
+    scorepost(osu_user)
+
+bot.run(token=discord_token)
+
 
 
