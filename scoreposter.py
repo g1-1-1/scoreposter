@@ -149,6 +149,7 @@ bot = commands.Bot(command_prefix='.', intents=discord.Intents.all())
 
 @bot.event
 async def on_ready():
+    await client.change_presence(status=discord.Status.Online, activity=discord.game('osu!'))
     print("Discord bot is up")
     try:
         synced = await bot.tree.sync()
@@ -163,7 +164,7 @@ async def on_ready():
 @app_commands.describe(osu_user="The username of the player you want to generate a scorepost title")
 @app_commands.rename(osu_user="username")
 async def scoreposter(interaction: discord.Interaction, osu_user : str):
-    await interaction.response.send_message(f"{scorepost(osu_user, False)}", ephemeral=False)
+    await interaction.response.send_message(f"```{scorepost(osu_user, False)}```", ephemeral=False)
 
 # command for discord to request scorepost from link
 
