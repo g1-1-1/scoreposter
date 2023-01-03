@@ -133,13 +133,18 @@ bot = commands.Bot(command_prefix='.', intents=discord.Intents.all())
 @bot.event
 async def onReady():
     print("Discord bot is up")
+    try:
+        synced = await bot.tree.sync()
+        print(f"Synced {len(synced)} command(s)")
+    except Exception as e:
+        print(e)
 
 
 # command for discord to request the scorepost
 
 @bot.tree.command(name="scorepost", description="This command will generate a scorepost title you can use in /r/osugame")
 @app_commands.describe(osu_user="The username of the player you want to generate a scorepost title")
-@app_commands.rename(osu_user="Username on osu!")
+@app_commands.rename(osu_user="username")
 async def scorepost(interaction: discord.Interaction, osu_user : str):
     await interaction.response.send_message(f"{bot.osu_user}", ephemeral=True)
     bot.osu_user = osu_user
