@@ -50,72 +50,77 @@ def int_to_santised_int(value: int) -> int:
                 combined_value |= mod
         return combined_value
 
-def calculate_accuracy(perfect_count, hundred_count, fifty_count, misses):
-    accuracy = (perfect_count * 300 + hundred_count * 100 + fifty_count * 50) / (perfect_count + fifty_count + hundred_count + misses) / 300 * 100
-    return accuracy
+def extract_initial_data(initial_data):
+    try:
+        beatmap_id, rank, score_max, n300, n100, n50, nmiss, perfect, int_mods = (
+            initial_data[0]["beatmap_id"], 
+            initial_data[0]["rank"], 
+            int(initial_data[0]["maxcombo"]), 
+            int(initial_data[0]["count300"]), 
+            int(initial_data[0]["count100"]), 
+            int(initial_data[0]["count50"]), 
+            int(initial_data[0]["countmiss"]), 
+            initial_data[0]["perfect"], 
+            int_to_santised_int(int(initial_data[0]["enabled_mods"]))
+        )
+    except IndexError as e:
+        print(f"an exception occurred: '{e}'; that user probably doesn't have any data available.")
+        raise
+    return beatmap_id, rank, score_max, n300, n100, n50, nmiss, perfect, int_mods
 
+def extract_map_data(map_data):
+    artist, title, creator, diff, map_max, circles, sliders, spinners, mode = (
+        map_data[0]["artist"],
+        map_data[0]["title"],
+        map_data[0]["creator"],
+        map_data[0]["version"],
+        int(map_data[0]["max_combo"]),
+        int(map_data[0]["count_normal"]),
+        int(map_data[0]["count_slider"]),
+        int(map_data[0]["count_spinner"]),
+        int(map_data[0]["mode"])
+    )
+    return artist, title, creator, diff, map_max, circles, sliders, spinners, mode
 
 # define command line arguments using the argparse module
 parser = argparse.ArgumentParser()
 parser.add_argument("-u", "--username", required=True, help="the username of the user whose play you want to retrieve.")
+parser.add_argument("-m", "--mode", required=False, default=os.getenv("default_mode"), help="the mode where the play happened, default is osu! standard (0); and syntax is numeric (0 = osu, 1 = taiko, 2 = fruits, 3 = mania)")
+parser.add_argument("-l", "--limit", required=False, default=1, help="amount of scoreposts you want, default is 1")
 args = parser.parse_args()
 
+# assign api_key .env variable to a global variable so that we don't have to call getenv() every time
 api_key = os.getenv("api_key")
 
 # make a request to the osu! API to retrieve the user's most recent play
-inital_response = requests.get(f"https://osu.ppy.sh/api/get_user_recent?k={api_key}&u={args.username}&limit=1")
+initial_response = requests.get(f"https://osu.ppy.sh/api/get_user_recent?k={api_key}&u={args.username}&mode={args.mode}&type=string&limit=1")
 print("making initial score request...")
-
 # parse the response as JSON
-initial_data = inital_response.json()
+initial_data = initial_response.json()
+# extract using function and assign tuple to variables
+beatmap_id, rank, score_max, n300, n100, n50, nmiss, perfect, int_mods = extract_initial_data(initial_data)
 
-# extract the relevant information from the response
-beatmap_id, rank, score_max, n300, n100, n50, nmiss, perfect, int_mods = (
-    initial_data[0]["beatmap_id"], 
-    initial_data[0]["rank"], 
-    int(initial_data[0]["maxcombo"]), 
-    int(initial_data[0]["count300"]), 
-    int(initial_data[0]["count100"]), 
-    int(initial_data[0]["count50"]), 
-    int(initial_data[0]["countmiss"]), 
-    initial_data[0]["perfect"], 
-    int_to_santised_int(int(initial_data[0]["enabled_mods"]))
-)
-
-readable_mods = int_to_readable(int(int_mods))
-
+# tell user we've finished that request
 print("made!")
-
+# then tell them we're moving to the next required request
 print("making the score's map request...")
+
 map_response = requests.get(f"https://osu.ppy.sh/api/get_beatmaps?k={api_key}&b={beatmap_id}&limit=1")
 map_data = map_response.json()
-
-artist, title, creator, diff, map_max, circles, sliders, spinners, mode = (
-    map_data[0]["artist"],
-    map_data[0]["title"],
-    map_data[0]["creator"],
-    map_data[0]["version"],
-    int(map_data[0]["max_combo"]),
-    int(map_data[0]["count_normal"]),
-    int(map_data[0]["count_slider"]),
-    int(map_data[0]["count_spinner"]),
-    int(map_data[0]["mode"])
-)
-
-total_objects = circles + sliders + spinners
-print(total_objects)
-accuracy = min(100.0 * ((n300 * 300.0) + (n100 * 100.0) + (n50 * 50.0)) / ((n300 + n100 + n50 + nmiss) * 300.0), 100)
+artist, title, creator, diff, map_max, circles, sliders, spinners, mode = extract_map_data(map_data)
 
 print("made!")
 print("creating the scorepost...")
-
-mods = "" if int_mods == 0 else " +" + ''.join(readable_mods)
 
 get_osu_file = requests.get(f"https://old.ppy.sh/osu/{beatmap_id}", stream=True)
 
 with open("beatmap.osu", "wb") as f:
     for chunk in get_osu_file.iter_content(chunk_size=8192):
         f.write(chunk)
+
+readable_mods = int_to_readable(int(int_mods))
+mods = " +" + ''.join(readable_mods) if int_mods != 0 else ""
+accuracy = min(100.0 * ((n300 * 300.0) + (n100 * 100.0) + (n50 * 50.0)) / ((n300 + n100 + n50 + nmiss) * 300.0), 100)
 
 map = Beatmap(bytes=open("beatmap.osu", "rb").read())
 calc = Calculator(mode=mode)
@@ -139,8 +144,6 @@ else:
     calc.set_mods(int_mods)
     max_pp = calc.performance(map)
     max_pp_string = f"({round(max_pp.pp):,}pp if FC)"
-
-print()
 
 scorepost = f"{args.username} | {artist} - {title} [{diff}] (mapped by {creator}, {sr}⭐️){mods} {accuracy:.2f}% {combo}{miss_string}{round(pp.pp):,}pp {max_pp_string} ".replace("%20", " ").replace("HDDTNC", "HDNC")
 
