@@ -157,10 +157,11 @@ def scorepost(username : str, link : bool, mode : str):
     elif link and re.search("https://osu\.ppy\.sh/scores/[a-zA-Z]+//([1-9][0-9]*)|0/", username) == False:
         return "Not an osu! score link"
 
-    beatmap_id, rank, score_max, n300, n100, n50, nmiss, perfect, int_mods, score_id = extract_initial_data(initial_data)
-    
+    # extract the relevant information from the response
 
-    accuracy = 100*((300*n300 + 100*n100 + 50*n50) / (300*(n300 + n100 + n50 + nmiss)))
+    beatmap_id, rank, score_max, n300, n100, n50, nmiss, perfect, int_mods, score_id = extract_initial_data(initial_data)
+
+    accuracy = min(100.0 * ((n300 * 300.0) + (n100 * 100.0) + (n50 * 50.0)) / ((n300 + n100 + n50 + nmiss) * 300.0), 100)
     readable_mods = int_to_readable(int(int_mods))
 
     print(f"{n300} {n100} {n50} {nmiss}")
@@ -218,7 +219,6 @@ def scorepost(username : str, link : bool, mode : str):
         max_pp_string = f"({round(max_pp.pp):,}pp if FC)"
 
     scorepost = f"{f'({mode_to_string(gamemode)}) ' if int(gamemode) != 0 else ''}{username} | {artist} - {title} [{diff}] ({creator}, {sr}⭐️){mods} {accuracy:.2f}% {combo}{miss_string}{round(pp.pp):,}pp {max_pp_string} ".replace("%20", " ").replace("HDDTNC", "HDNC")
-
     return scorepost
 
 
