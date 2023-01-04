@@ -28,12 +28,12 @@ mods = [
 def int_to_readable(value: int) -> List[str]:
     mod_names = [name for mod, name in mods if value & mod]
 
-    # check for invalid combinations
+    # Check for invalid combinations
     if "SD" in mod_names and "PF" in mod_names:
         mod_names.remove("SD")
         return mod_names
     if "DT" in mod_names and "NC" in mod_names:
-        # remove "DT" and return "HD" and "NC"
+        # Remove "DT" and return "HD" and "NC"
         mod_names.remove("DT")
         return mod_names
 
@@ -187,7 +187,7 @@ scorepost = f"{f'({mode_to_string(int(args.mode))}) ' if int(args.mode) != 0 els
 print(f"\n{scorepost}")
 
 if score_id != None:
-    print(f"\nhere's the score link, on osu!: https://osu.ppy.sh/score/{mode_to_url_string(int(args.mode))}/{score_id}")
+    print(f"\nhere's the score link, on osu!: https://osu.ppy.sh/scores/{mode_to_url_string(int(args.mode))}/{score_id}")
 else:
     print(f"\nsince this play is a failed one (or unranked), a score link is not available!")
     
