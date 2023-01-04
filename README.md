@@ -20,9 +20,6 @@ An Open Source discord bot that utilizes [Oi8's tool](https://github.com/0i8/sco
 1. Add the bot to a discord server
 1. Run the command `/scorepost`
 
-You can also use the [bot I host](https://discord.com/oauth2/authorize?client_id=1059681329937133588&scope=bot&permissions=2147485696), you can also host
-for example, if you want to grab mrekk's last play:
-
 ![example](readme-pics/example.png)
 
 If you need support, you can join [The Discord server!](https://discord.gg/bEEAGJd2RR)
