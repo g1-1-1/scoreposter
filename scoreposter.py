@@ -52,7 +52,7 @@ def int_to_santised_int(value: int) -> int:
 
 def extract_initial_data(initial_data):
     try:
-        beatmap_id, rank, score_max, n300, n100, n50, nmiss, perfect, int_mods = (
+        beatmap_id, rank, score_max, n300, n100, n50, nmiss, perfect, int_mods, score_id = (
             initial_data[0]["beatmap_id"], 
             initial_data[0]["rank"], 
             int(initial_data[0]["maxcombo"]), 
@@ -61,12 +61,14 @@ def extract_initial_data(initial_data):
             int(initial_data[0]["count50"]), 
             int(initial_data[0]["countmiss"]), 
             initial_data[0]["perfect"], 
-            int_to_santised_int(int(initial_data[0]["enabled_mods"]))
+            int_to_santised_int(int(initial_data[0]["enabled_mods"])),
+            initial_data[0]["score_id"]
         )
     except IndexError as e:
         print(f"an exception occurred: '{e}'; that user probably doesn't have any data available.")
         raise
-    return beatmap_id, rank, score_max, n300, n100, n50, nmiss, perfect, int_mods
+
+    return beatmap_id, rank, score_max, n300, n100, n50, nmiss, perfect, int_mods, score_id
 
 def extract_map_data(map_data):
     artist, title, creator, diff, map_max, circles, sliders, spinners, mode = (
@@ -82,6 +84,24 @@ def extract_map_data(map_data):
     )
     return artist, title, creator, diff, map_max, circles, sliders, spinners, mode
 
+def mode_to_string(mode):
+    modes = {
+        0: "osu!",
+        1: "osu!taiko",
+        2: "osu!catch",
+        3: "osu!mania"
+    }
+    return modes.get(mode, "invalid mode passed!")
+
+def mode_to_url_string(mode):
+    modes = {
+        0: "osu",
+        1: "taiko",
+        2: "fruits",
+        3: "mania"
+    }
+    return modes.get(mode, "invalid mode passed!")
+
 # define command line arguments using the argparse module
 parser = argparse.ArgumentParser()
 parser.add_argument("-u", "--username", required=True, help="the username of the user whose play you want to retrieve.")
@@ -92,13 +112,19 @@ args = parser.parse_args()
 # assign api_key .env variable to a global variable so that we don't have to call getenv() every time
 api_key = os.getenv("api_key")
 
-# make a request to the osu! API to retrieve the user's most recent play
-initial_response = requests.get(f"https://osu.ppy.sh/api/get_user_recent?k={api_key}&u={args.username}&mode={args.mode}&type=string&limit=1")
+if int(args.mode) not in (0, 1, 2, 3):
+    print("passed mode is invalid! exiting...")
+    raise ValueError
+
+# tell the user we're about to make the initial request
 print("making initial score request...")
+
+# make a request to the osu! API to retrieve the user's most recent play
+initial_response = requests.get(f"https://osu.ppy.sh/api/get_user_recent?k={api_key}&u={args.username}&mode={int(args.mode)}&type=string&limit=1")
 # parse the response as JSON
 initial_data = initial_response.json()
 # extract using function and assign tuple to variables
-beatmap_id, rank, score_max, n300, n100, n50, nmiss, perfect, int_mods = extract_initial_data(initial_data)
+beatmap_id, rank, score_max, n300, n100, n50, nmiss, perfect, int_mods, score_id = extract_initial_data(initial_data)
 
 # tell user we've finished that request
 print("made!")
@@ -110,13 +136,19 @@ map_data = map_response.json()
 artist, title, creator, diff, map_max, circles, sliders, spinners, mode = extract_map_data(map_data)
 
 print("made!")
+# tell the user we're now going to create the scorepost (all we really have to do left is calculate pp)
 print("creating the scorepost...")
 
-get_osu_file = requests.get(f"https://old.ppy.sh/osu/{beatmap_id}", stream=True)
-
-with open("beatmap.osu", "wb") as f:
-    for chunk in get_osu_file.iter_content(chunk_size=8192):
-        f.write(chunk)
+try:
+    # grab the .osu file so we can do calculations locally
+    get_osu_file = requests.get(f"https://old.ppy.sh/osu/{beatmap_id}", stream=True)
+    # open the .osu file we captured
+    with open("beatmap.osu", "wb") as f:
+        for chunk in get_osu_file.iter_content(chunk_size=8192):
+            f.write(chunk)
+except:
+    print(".osu file was unreachable, exiting!")
+    raise InterruptedError
 
 readable_mods = int_to_readable(int(int_mods))
 mods = " +" + ''.join(readable_mods) if int_mods != 0 else ""
@@ -145,8 +177,14 @@ else:
     max_pp = calc.performance(map)
     max_pp_string = f"({round(max_pp.pp):,}pp if FC)"
 
-scorepost = f"{args.username} | {artist} - {title} [{diff}] (mapped by {creator}, {sr}⭐️){mods} {accuracy:.2f}% {combo}{miss_string}{round(pp.pp):,}pp {max_pp_string} ".replace("%20", " ").replace("HDDTNC", "HDNC")
+scorepost = f"{f'({mode_to_string(int(args.mode))}) ' if int(args.mode) != 0 else ''}{args.username} | {artist} - {title} [{diff}] (mapped by {creator}, {sr}⭐️){mods} {accuracy:.2f}% {combo}{miss_string}{round(pp.pp):,}pp {max_pp_string} ".replace("%20", " ").replace("HDDTNC", "HDNC")
 
 # print the scorepost to the console
-print(f"{scorepost}")
-print("\ncompleted!")
+print(f"\n{scorepost}")
+
+if score_id != None:
+    print(f"\nhere's the score link, on osu!: https://osu.ppy.sh/score/{mode_to_url_string(int(args.mode))}/{score_id}")
+else:
+    print(f"\nsince this play is a failed one, a score link is not available!")
+    
+print("completed!")
