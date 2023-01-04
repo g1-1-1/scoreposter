@@ -157,18 +157,7 @@ def scorepost(username : str, link : bool, mode : str):
     elif link and re.search("https://osu\.ppy\.sh/scores/[a-zA-Z]+//([1-9][0-9]*)|0/", username) == False:
         return "Not an osu! score link"
 
-    # beatmap_id, rank, score_max, n300, n100, n50, nmiss, perfect, int_mods, score_id = extract_initial_data(initial_data)
-
-    beatmap_id, score_max, n300, n100, n50, nmiss, perfect, int_mods = (
-        initial_data[0]["beatmap_id"], 
-        initial_data[0]["maxcombo"], 
-        int(initial_data[0]["count300"]), 
-        int(initial_data[0]["count100"]), 
-        int(initial_data[0]["count50"]), 
-        int(initial_data[0]["countmiss"]), 
-        initial_data[0]["perfect"], 
-        int(initial_data[0]["enabled_mods"])
-    )
+    beatmap_id, rank, score_max, n300, n100, n50, nmiss, perfect, int_mods, score_id = extract_initial_data(initial_data)
     
 
     accuracy = 100*((300*n300 + 100*n100 + 50*n50) / (300*(n300 + n100 + n50 + nmiss)))
