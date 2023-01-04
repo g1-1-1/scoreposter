@@ -189,6 +189,6 @@ print(f"\n{scorepost}")
 if score_id != None:
     print(f"\nhere's the score link, on osu!: https://osu.ppy.sh/score/{mode_to_url_string(int(args.mode))}/{score_id}")
 else:
-    print(f"\nsince this play is a failed one, a score link is not available!")
+    print(f"\nsince this play is a failed one (or unranked), a score link is not available!")
     
 print("completed!")
