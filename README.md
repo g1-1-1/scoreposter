@@ -20,6 +20,9 @@ An Open Source discord bot that utilizes [Oi8's tool](https://github.com/0i8/sco
 1. Add the bot to a discord server
 1. Run the command `/scorepost`
 
+for example, if you want to grab aetrna's last play:
 ![example](readme-pics/example.png)
+
+and if you want to grab aitor98's last play:
 
 If you need support, you can join [The Discord server!](https://discord.gg/bEEAGJd2RR)
