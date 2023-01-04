@@ -174,7 +174,7 @@ elif nmiss == 0:
     miss_string = ""
 else:
     miss_string = f" {nmiss}❌ "
-    combo = f"{int(score_max):,}x/{int(map_max):,}x "
+    combo = f"{int(score_max):,}x/{int(map_max):,}x"
     calc.set_n_misses(0)
     calc.set_combo(int(map_max))
     calc.set_mods(int_mods)
