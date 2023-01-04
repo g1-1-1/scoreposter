@@ -10,7 +10,7 @@ a python script that generates /r/osugame scorepost titles
 5. [install python](https://www.python.org/downloads/)
 6. open your console where you have this repository in
 7. run `pip install -r requirements.txt`
-8. if everything is successful, in your console, run `python scoreposter.py -u [username]`
+8. if everything is successful, in your console, run `python scoreposter.py -u=[username]`
 
 for example, if you want to grab mrekk's last play:
 ![example](https://file.coffee/u/3O7MEKtNvXxWCZW6WnjdP.png)
