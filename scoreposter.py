@@ -87,8 +87,6 @@ def extract_initial_data(initial_data):
     except IndexError as e:
         print(f"an exception occurred: '{e}'; that user probably doesn't have any data available.")
         raise
-
-    print( beatmap_id, rank, score_max, n300, n100, n50, nmiss, perfect, int_mods, score_id)
     return beatmap_id, rank, score_max, n300, n100, n50, nmiss, perfect, int_mods, score_id
 
 def extract_map_data(map_data):
@@ -139,32 +137,43 @@ def scorepost(username : str, link : bool, mode : str):
     gamemode = string_to_mode(mode)
 
     # make a request to the osu! API to retrieve the user's most recent play
+    global initial_data
+    
     if link == False:
-        print(f"making initial score request for {username}...")
-        inital_response_user = requests.get(f"https://osu.ppy.sh/api/get_user_recent?k={osu_api_key}&u={username}&m={gamemode}&limit=1")
+        try:
+            print(f"making initial score request for {username}...")
+            inital_response_user = requests.get(f"https://osu.ppy.sh/api/get_user_recent?k={osu_api_key}&u={username}&m={gamemode}&limit=1")
+            print(inital_response_user)
+        except:
+            return "No plays done by that player recently"
+        else:
+            # parse the response as JSON
+            initial_data = inital_response_user.json()
+            print(initial_data)
 
-        # parse the response as JSON
-        initial_data = inital_response_user.json()
     #regex to check if it's a score link
 
     elif link and re.search("https://osu\.ppy\.sh/scores/[a-zA-Z]+//([1-9][0-9]*)|0/", username):
-        print(f"making initial score request for {username}...")
-        initial_response_link = requests.get(f"https://osu.ppy.sh/api/get_user_recent?k={osu_api_key}&u={username}&m={gamemode}&limit=1")
-
-        # parse the response as JSON
-        initial_data = initial_response_link.json()
+        try:
+            print(f"making initial score request for {username}...")
+            inital_response_user = requests.get(f"https://osu.ppy.sh/api/get_user_recent?k={osu_api_key}&u={username}&m={gamemode}&limit=1")
+        except:
+            return "No plays done by that player recently"
+        else:
+            # parse the response as JSON
+            initial_data = inital_response_user.json()
     
     elif link and re.search("https://osu\.ppy\.sh/scores/[a-zA-Z]+//([1-9][0-9]*)|0/", username) == False:
         return "Not an osu! score link"
 
     # extract the relevant information from the response
 
+
     beatmap_id, rank, score_max, n300, n100, n50, nmiss, perfect, int_mods, score_id = extract_initial_data(initial_data)
 
     accuracy = min(100.0 * ((n300 * 300.0) + (n100 * 100.0) + (n50 * 50.0)) / ((n300 + n100 + n50 + nmiss) * 300.0), 100)
     readable_mods = int_to_readable(int(int_mods))
 
-    print(f"{n300} {n100} {n50} {nmiss}")
 
     print("done!")
 
