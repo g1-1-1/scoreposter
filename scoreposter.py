@@ -91,7 +91,7 @@ def mode_to_string(mode):
         2: "osu!catch",
         3: "osu!mania"
     }
-    return modes.get(mode, "invalid mode passed!")
+    return modes.get(mode, int(args.mode))
 
 def mode_to_url_string(mode):
     modes = {
@@ -100,7 +100,7 @@ def mode_to_url_string(mode):
         2: "fruits",
         3: "mania"
     }
-    return modes.get(mode, "invalid mode passed!")
+    return modes.get(mode, int(args.mode))
 
 # define command line arguments using the argparse module
 parser = argparse.ArgumentParser()
