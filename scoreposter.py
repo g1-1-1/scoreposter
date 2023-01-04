@@ -120,7 +120,7 @@ if int(args.mode) not in (0, 1, 2, 3):
 print("making initial score request...")
 
 # make a request to the osu! API to retrieve the user's most recent play
-initial_response = requests.get(f"https://osu.ppy.sh/api/get_user_recent?k={api_key}&u={args.username}&mode={int(args.mode)}&type=string&limit=1")
+initial_response = requests.get(f"https://osu.ppy.sh/api/get_user_recent?k={api_key}&u={args.username}&m={int(args.mode)}&limit=1")
 # parse the response as JSON
 initial_data = initial_response.json()
 # extract using function and assign tuple to variables
