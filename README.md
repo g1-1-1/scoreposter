@@ -4,8 +4,10 @@
 
 An Open Source discord bot that utilizes [Oi8's tool](https://github.com/0i8/scoreposter) for creating scoreposts for plays made in Bancho, and puts them on a easy to use tool in discord
 
+### [Bot invite link](https://discord.com/oauth2/authorize?client_id=1059681329937133588&scope=bot&permissions=2147485696)
+
 ---
-## How to use
+## How to run it locally
 1. [Install git](https://git-scm.com/)
 1. Clone this repo (`git clone https://github.com/r0xANDt0l/scoreposter-discord`)
 1. [Get your osu api key](https://osu.ppy.sh/p/api)
@@ -18,7 +20,7 @@ An Open Source discord bot that utilizes [Oi8's tool](https://github.com/0i8/sco
 1. Add the bot to a discord server
 1. Run the command `/scorepost`
 
-You can also use the [bot I host on my machine](https://discord.com/oauth2/authorize?client_id=1059681329937133588&scope=bot&permissions=2147485696), I'll eventually host it on a VPS, so right now it's not online 24/7
+You can also use the [bot I host](https://discord.com/oauth2/authorize?client_id=1059681329937133588&scope=bot&permissions=2147485696), you can also host
 for example, if you want to grab mrekk's last play:
 
 ![example](readme-pics/example.png)
