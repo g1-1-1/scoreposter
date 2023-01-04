@@ -13,7 +13,7 @@ a python script that generates /r/osugame scorepost titles
 8. if everything is successful, in your console, run `python scoreposter.py -u=[username]`
 
 for example, if you want to grab mrekk's last play:
-![example](https://file.coffee/u/3O7MEKtNvXxWCZW6WnjdP.png)
+![example](https://file.coffee/u/L0sQOp1AJEE7gGFaa7rjn.png)
 
 and to grab dressurf's (osu!mania player) last play:
 ![example2](https://file.coffee/u/rU1Y3AugqeCLuVO0aV90V.png)
