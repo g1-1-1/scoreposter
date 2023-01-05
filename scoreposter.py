@@ -128,56 +128,32 @@ def string_to_mode(mode):
             "osu!catch" : 2,
             "osu!mania" : 3
         }
-    return modes.get(mode, 0)
+    return modes[mode]
 
-def scorepost(username : str, link : bool, mode : str):
+def scorepost(username : str, ruleset : str):
 
     # map mode to numbers
-    
-    gamemode = string_to_mode(mode)
+    gamemode = string_to_mode(ruleset)
 
     # make a request to the osu! API to retrieve the user's most recent play
-    global initial_data
+
+    print(f"making initial score request for {username}...")
+    initial_response_user = requests.get(f"https://osu.ppy.sh/api/get_user_recent?k={osu_api_key}&u={username}&m={gamemode}&limit=1")
+
+    # parse the response as JSON
     
-    if link == False:
-        try:
-            print(f"making initial score request for {username}...")
-            inital_response_user = requests.get(f"https://osu.ppy.sh/api/get_user_recent?k={osu_api_key}&u={username}&m={gamemode}&limit=1")
-            print(inital_response_user)
-        except:
-            return "No plays done by that player recently"
-        else:
-            # parse the response as JSON
-            initial_data = inital_response_user.json()
-            print(initial_data)
+    initial_data = initial_response_user.json()
 
-    #regex to check if it's a score link
-
-    elif link and re.search("https://osu\.ppy\.sh/scores/[a-zA-Z]+//([1-9][0-9]*)|0/", username):
-        try:
-            print(f"making initial score request for {username}...")
-            inital_response_user = requests.get(f"https://osu.ppy.sh/api/get_user_recent?k={osu_api_key}&u={username}&m={gamemode}&limit=1")
-        except:
-            return "No plays done by that player recently"
-        else:
-            # parse the response as JSON
-            initial_data = inital_response_user.json()
-    
-    elif link and re.search("https://osu\.ppy\.sh/scores/[a-zA-Z]+//([1-9][0-9]*)|0/", username) == False:
-        return "Not an osu! score link"
-
+    if initial_data == []:
+        return f"No plays done by {username} on {ruleset} recently"
     # extract the relevant information from the response
 
-
     beatmap_id, rank, score_max, n300, n100, n50, nmiss, perfect, int_mods, score_id = extract_initial_data(initial_data)
-
-    accuracy = min(100.0 * ((n300 * 300.0) + (n100 * 100.0) + (n50 * 50.0)) / ((n300 + n100 + n50 + nmiss) * 300.0), 100)
     readable_mods = int_to_readable(int(int_mods))
 
-
     print("done!")
-
     print("making the score's map request...")
+
     map_response = requests.get(f"https://osu.ppy.sh/api/get_beatmaps?k={osu_api_key}&b={beatmap_id}&limit=1")
     map_data = map_response.json()
     artist, title, creator, diff, map_max, circles, sliders, spinners, mode = extract_map_data(map_data)
@@ -209,7 +185,6 @@ def scorepost(username : str, link : bool, mode : str):
 
     pp = calc.performance(map)
     sr = round(float(pp.difficulty.stars), 2)
-
     if score_max - 20 >= map_max is True:
         combo = "FC "
         max_pp_string = ""
@@ -220,17 +195,16 @@ def scorepost(username : str, link : bool, mode : str):
         miss_string = ""
     else:
         miss_string = f" {nmiss}❌ "
-        combo = f"{int(score_max):,}x/{int(map_max):,}x"
+        combo = f"{int(score_max):,}/{int(map_max):,}x"
         calc.set_n_misses(0)
         calc.set_combo(int(map_max))
         calc.set_mods(int_mods)
         max_pp = calc.performance(map)
         max_pp_string = f"({round(max_pp.pp):,}pp if FC)"
 
-    scorepost = f"{f'({mode_to_string(gamemode)}) ' if int(gamemode) != 0 else ''}{username} | {artist} - {title} [{diff}] ({creator}, {sr}⭐️){mods} {accuracy:.2f}% {combo}{miss_string}{round(pp.pp):,}pp {max_pp_string} ".replace("%20", " ").replace("HDDTNC", "HDNC")
+    scorepost = f"{f'[{mode_to_string(gamemode)}] ' if int(gamemode) != 0 else ''}{username} | {artist} - {title} [{diff}] ({creator}, {sr}⭐️){mods} {accuracy:.2f}% {combo}{miss_string}| {round(pp.pp):,}pp {max_pp_string} ".replace("%20", " ").replace("HDDTNC", "HDNC")
+    
     return scorepost
-
-
 
 # start discord bot
 
@@ -252,7 +226,7 @@ async def on_ready():
 @app_commands.describe(osu_user="The username of the player you want to generate a scorepost title", mode="The gamemode of the player who set the play, defaults to osu!")
 @app_commands.rename(osu_user="username", mode="gamemode")
 async def scoreposter(interaction: discord.Interaction, osu_user : str, mode : Literal['osu!','osu!mania','osu!taiko','osu!catch']):
-    await interaction.response.send_message(f"```{scorepost(osu_user,mode , False)}```", ephemeral=False)
+    await interaction.response.send_message(f"```{scorepost(osu_user ,mode)}```", ephemeral=False)
 
 # # command for discord to request scorepost from link
 
@@ -264,3 +238,20 @@ async def scoreposter(interaction: discord.Interaction, osu_user : str, mode : L
     
 
 bot.run(discord_token)
+
+    # #regex to check if it's a score link
+
+    # elif link and re.search("https://osu\.ppy\.sh/scores/[a-zA-Z]+//([1-9][0-9]*)|0/", username):
+    #     try:
+    #         print(f"making initial score request for {username}...")
+    #         inital_response_user = requests.get(f"https://osu.ppy.sh/api/get_user_recent?k={osu_api_key}&u={username}&m={gamemode}&limit=1")
+    #     except:
+    #         return "No plays done by that player recently"
+    #     else:
+    #         # parse the response as JSON
+    #         initial_data = inital_response_user.json()
+    #         beatmap_id, rank, score_max, n300, n100, n50, nmiss, perfect, int_mods, score_id = extract_initial_data(initial_data)
+    #     accuracy = min(100.0 * ((n300 * 300.0) + (n100 * 100.0) + (n50 * 50.0)) / ((n300 + n100 + n50 + nmiss) * 300.0), 100)
+    
+    # elif link and re.search("https://osu\.ppy\.sh/scores/[a-zA-Z]+//([1-9][0-9]*)|0/", username) == False:
+    #     return "Not an osu! score link"
