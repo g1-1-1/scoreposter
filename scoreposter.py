@@ -1,6 +1,10 @@
 import argparse
 import requests
 import os
+from selenium import webdriver
+from selenium.webdriver import FirefoxOptions
+from selenium.webdriver.support.ui import WebDriverWait
+from PIL import Image
 from typing import List
 from rosu_pp_py import Beatmap, Calculator
 from dotenv import load_dotenv
@@ -102,6 +106,42 @@ def mode_to_url_string(mode):
     }
     return modes.get(mode, int(args.mode))
 
+def take_screenshot(url, crop_coordinates):
+    # start a web browser and navigate to the webpage
+    opts = FirefoxOptions()
+    opts.add_argument("--headless")
+    driver = webdriver.Firefox(options=opts)
+    driver.get(url)
+
+    # tell user we're waiting for their screenshot
+    print("waiting for screenshot...")
+    # wait for the page to fully load
+    WebDriverWait(driver, 6)  # wait for up to 10 seconds
+
+    # take a screenshot of the webpage 
+    screenshot = driver.get_screenshot_as_png()
+    # save the screenshot to a file
+    with open("screenshot.png", "wb") as f:
+        f.write(screenshot)
+
+    # close the web browser
+    driver.quit()
+
+    # open the screenshot
+    screenshot = Image.open("screenshot.png")
+    # crop the image
+    cropped_screenshot = screenshot.crop(crop_coordinates)
+    # save the cropped image
+    cropped_screenshot.save("ss.png")
+
+    if os.path.exists("screenshot.png"):
+        # get rid of the unneeded full screenshot
+        os.remove("screenshot.png")
+        print("screenshot made!")
+    else:
+        print("this file doesn't exist, but wasn't deleted by us..")
+        raise FileNotFoundError
+
 # define command line arguments using the argparse module
 parser = argparse.ArgumentParser()
 parser.add_argument("-u", "--username", required=True, help="the username of the user whose play you want to retrieve.")
@@ -164,22 +204,23 @@ calc.set_combo(score_max)
 pp = calc.performance(map)
 sr = round(float(pp.difficulty.stars), 2)
 
-if score_max - 20 >= map_max is True:
+if score_max - 20 >= map_max:
     combo = "FC "
     max_pp_string = ""
     miss_string = ""
-elif nmiss == 0:
-    combo = f"{int(score_max):,}x/{int(map_max):,}x "
-    max_pp_string = ""
-    miss_string = ""
 else:
-    miss_string = f" {nmiss}❌ "
-    combo = f"{int(score_max):,}x/{int(map_max):,}x"
-    calc.set_n_misses(0)
-    calc.set_combo(int(map_max))
-    calc.set_mods(int_mods)
-    max_pp = calc.performance(map)
-    max_pp_string = f"({round(max_pp.pp):,}pp if FC)"
+    if nmiss == 0:
+        combo = f"{int(score_max):,}x/{int(map_max):,}x "
+        max_pp_string = ""
+        miss_string = ""
+    else:
+        miss_string = f" {nmiss}❌ "
+        combo = f"{int(score_max):,}x/{int(map_max):,}x"
+        calc.set_n_misses(0)
+        calc.set_combo(int(map_max))
+        calc.set_mods(int_mods)
+        max_pp = calc.performance(map)
+        max_pp_string = f"({round(max_pp.pp):,}pp if FC)"
 
 scorepost = f"{f'({mode_to_string(int(args.mode))}) ' if int(args.mode) != 0 else ''}{args.username} | {artist} - {title} [{diff}] (mapped by {creator}, {sr}⭐️){mods} {accuracy:.2f}% {combo}{miss_string}{round(pp.pp):,}pp {max_pp_string} ".replace("%20", " ").replace("HDDTNC", "HDNC")
 
@@ -188,7 +229,10 @@ print(f"\n{scorepost}")
 
 if score_id != None:
     print(f"\nhere's the score link, on osu!: https://osu.ppy.sh/scores/{mode_to_url_string(int(args.mode))}/{score_id}")
+    if os.getenv("screenshots") == "yes":
+        take_screenshot(f"https://osu.ppy.sh/scores/{mode_to_url_string(int(args.mode))}/{score_id}", (175, 95, 1180, 640))
+        print(f"\nsince we have a score link and you have screenshots enabled, we have saved a snapshot of the page as 'ss.png'.")
 else:
     print(f"\nsince this play is a failed one (or unranked), a score link is not available!")
-    
+
 print("completed!")
