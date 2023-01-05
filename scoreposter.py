@@ -116,7 +116,7 @@ def take_screenshot(url, crop_coordinates):
     # tell user we're waiting for their screenshot
     print("waiting for screenshot...")
     # wait for the page to fully load
-    WebDriverWait(driver, 6)  # wait for up to 10 seconds
+    WebDriverWait(driver, 10)  # wait for up to 10 seconds
 
     # take a screenshot of the webpage 
     screenshot = driver.get_screenshot_as_png()
@@ -204,7 +204,7 @@ calc.set_combo(score_max)
 pp = calc.performance(map)
 sr = round(float(pp.difficulty.stars), 2)
 
-if score_max - 20 >= map_max:
+if score_max - 20 <= map_max and nmiss == 0:
     combo = "FC "
     max_pp_string = ""
     miss_string = ""
@@ -233,6 +233,6 @@ if score_id != None:
         take_screenshot(f"https://osu.ppy.sh/scores/{mode_to_url_string(int(args.mode))}/{score_id}", (175, 95, 1180, 640))
         print(f"\nsince we have a score link and you have screenshots enabled, we have saved a snapshot of the page as 'ss.png'.")
 else:
-    print(f"\nsince this play is a failed one (or unranked), a score link is not available!")
+    print(f"\nsince this play is a failed one, not their best score, or unranked; a score link is not available!")
 
 print("completed!")
