@@ -7,6 +7,7 @@ from selenium import webdriver
 from selenium.webdriver import FirefoxOptions
 from selenium.webdriver.support.ui import WebDriverWait
 from PIL import Image
+import geckodriver_autoinstaller
 
 from rosu_pp_py import Beatmap, Calculator
 from dotenv import load_dotenv
@@ -138,6 +139,11 @@ def string_to_mode(mode):
     return modes[mode]
 
 def take_screenshot(url, crop_coordinates):
+
+    # install geckodriver
+    
+    geckodriver_autoinstaller.install()
+
     # start a web browser and navigate to the webpage
     opts = FirefoxOptions()
     opts.add_argument("--headless")

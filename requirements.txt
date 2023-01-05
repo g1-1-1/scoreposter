@@ -11,3 +11,4 @@ requests
 rosu_pp_py
 discord.py 
 selenium
+geckodriver-autoinstaller

@@ -10,7 +10,6 @@ An Open Source discord bot that utilizes [Oi8's tool](https://github.com/0i8/sco
 ## How to run it locally
 1. [Install git](https://git-scm.com/)
 1. Clone this repo (`git clone https://github.com/r0xANDt0l/scoreposter-discord`)
-1. If you're in a Debian based OS (like Ubuntu or Pop!_OS), run `sudo apt install firefox-geckodriver`, if you're on an Arch Linux based OS (like Manjaro or Garuda), install [this package from the AUR](https://archlinux.org/packages/community/x86_64/geckodriver/), and if you're on a RedHat based OS (Like Fedora or Rocky), run
 1. [Get your osu api key](https://osu.ppy.sh/p/api)
 1. [Get your discord bot token](https://discord.com/developers/applications)
 1. Put your osu! api key and Discord token in the .env
