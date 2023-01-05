@@ -1,6 +1,6 @@
 import requests
 import os
-import re
+from random import choice
 from typing import List, Literal
 from rosu_pp_py import Beatmap, Calculator
 from dotenv import load_dotenv
@@ -123,7 +123,7 @@ def mode_to_url_string(mode):
 
 def string_to_mode(mode):
     modes = {
-            "osu!" : 0,
+            "osu!std" : 0,
             "osu!taiko" : 1,
             "osu!catch" : 2,
             "osu!mania" : 3
@@ -212,7 +212,7 @@ bot = commands.Bot(command_prefix='.', intents=discord.Intents.none())
 
 @bot.event
 async def on_ready():
-    await bot.change_presence(status=discord.Status.online, activity=discord.Game("osu!"))
+    await bot.change_presence(status=discord.Status.online, activity=discord.Game(choice(["osu!","osu!Lazer", "osu!stream"])))
     print("Discord bot is up")
     try:
         synced = await bot.tree.sync()
@@ -225,8 +225,11 @@ async def on_ready():
 @bot.tree.command(name="scorepost", description="This command will generate a scorepost title you can use in /r/osugame from an user's last play")
 @app_commands.describe(osu_user="The username of the player you want to generate a scorepost title", mode="The gamemode of the player who set the play, defaults to osu!")
 @app_commands.rename(osu_user="username", mode="gamemode")
-async def scoreposter(interaction: discord.Interaction, osu_user : str, mode : Literal['osu!','osu!mania','osu!taiko','osu!catch']):
+@app_commands.Argument.required(False)
+async def scoreposter(interaction: discord.Interaction, osu_user : str, mode : Literal['osu!std','osu!mania','osu!taiko','osu!catch'] = 'osu!std'):
+    await bot.change_presence(status=discord.Status.online, activity=discord.Game(choice(["osu!","osu!Lazer", "osu!stream"])))
     await interaction.response.send_message(f"```{scorepost(osu_user ,mode)}```", ephemeral=False)
+
 
 # # command for discord to request scorepost from link
 
