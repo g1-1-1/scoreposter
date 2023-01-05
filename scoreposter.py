@@ -2,6 +2,12 @@ import requests
 import os
 from random import choice
 from typing import List, Literal
+
+from selenium import webdriver
+from selenium.webdriver import FirefoxOptions
+from selenium.webdriver.support.ui import WebDriverWait
+from PIL import Image
+
 from rosu_pp_py import Beatmap, Calculator
 from dotenv import load_dotenv
 
@@ -90,7 +96,7 @@ def extract_initial_data(initial_data):
     return beatmap_id, rank, score_max, n300, n100, n50, nmiss, perfect, int_mods, score_id
 
 def extract_map_data(map_data):
-    artist, title, creator, diff, map_max, circles, sliders, spinners, mode = (
+    artist, title, creator, diff, map_max, circles, sliders, spinners, mode, status = (
         map_data[0]["artist"],
         map_data[0]["title"],
         map_data[0]["creator"],
@@ -99,9 +105,10 @@ def extract_map_data(map_data):
         int(map_data[0]["count_normal"]),
         int(map_data[0]["count_slider"]),
         int(map_data[0]["count_spinner"]),
-        int(map_data[0]["mode"])
+        int(map_data[0]["mode"]),
+        int(map_data[0]["approved"])
     )
-    return artist, title, creator, diff, map_max, circles, sliders, spinners, mode
+    return artist, title, creator, diff, map_max, circles, sliders, spinners, mode, status
 
 def mode_to_string(mode):
     modes = {
@@ -130,6 +137,55 @@ def string_to_mode(mode):
         }
     return modes[mode]
 
+def take_screenshot(url, crop_coordinates):
+    # start a web browser and navigate to the webpage
+    opts = FirefoxOptions()
+    opts.add_argument("--headless")
+    driver = webdriver.Firefox(options=opts)
+    driver.get(url)
+
+    # tell user we're waiting for their screenshot
+    print("waiting for screenshot...")
+    # wait for the page to fully load
+    WebDriverWait(driver, 10)  # wait for up to 10 seconds
+
+    # take a screenshot of the webpage 
+    screenshot = driver.get_screenshot_as_png()
+    # save the screenshot to a file
+    with open("screenshot.png", "wb") as f:
+        f.write(screenshot)
+
+    # close the web browser
+    driver.quit()
+
+    # open the screenshot
+    screenshot = Image.open("screenshot.png")
+    # crop the image
+    cropped_screenshot = screenshot.crop(crop_coordinates)
+    # save the cropped image
+    cropped_screenshot.save("ss.png")
+
+    if os.path.exists("screenshot.png"):
+        # get rid of the unneeded full screenshot
+        os.remove("screenshot.png")
+        print("screenshot made!")
+    else:
+        print("this file doesn't exist, but wasn't deleted by us..")
+        raise FileNotFoundError
+
+def getScoreLink(score_id, gamemode):
+    if score_id != None:
+        return f"Score link: https://osu.ppy.sh/scores/{mode_to_url_string(int(gamemode))}/{score_id}"
+    else:
+        return None
+
+    # if os.getenv("screenshots") == "yes":
+    #     take_screenshot(f"https://osu.ppy.sh/scores/{mode_to_url_string(int(gamemode))}/{score_id}", (175, 95, 1180, 640))
+    #     print(f"\nsince we have a score link and you have screenshots enabled, we have saved a snapshot of the page as 'ss.png'.")
+
+
+
+
 def scorepost(username : str, ruleset : str):
 
     # map mode to numbers
@@ -147,7 +203,7 @@ def scorepost(username : str, ruleset : str):
     if initial_data == []:
         return f"No plays done by {username} on {ruleset} recently"
     # extract the relevant information from the response
-
+    global score_id
     beatmap_id, rank, score_max, n300, n100, n50, nmiss, perfect, int_mods, score_id = extract_initial_data(initial_data)
     readable_mods = int_to_readable(int(int_mods))
 
@@ -156,7 +212,7 @@ def scorepost(username : str, ruleset : str):
 
     map_response = requests.get(f"https://osu.ppy.sh/api/get_beatmaps?k={osu_api_key}&b={beatmap_id}&limit=1")
     map_data = map_response.json()
-    artist, title, creator, diff, map_max, circles, sliders, spinners, mode = extract_map_data(map_data)
+    artist, title, creator, diff, map_max, circles, sliders, spinners, mode, status = extract_map_data(map_data)
 
     print("done!")
     print(f"creating the scorepost for {username} latest's play...")
@@ -202,8 +258,31 @@ def scorepost(username : str, ruleset : str):
         max_pp = calc.performance(map)
         max_pp_string = f"({round(max_pp.pp):,}pp if FC)"
 
-    scorepost = f"{f'[{mode_to_string(gamemode)}] ' if int(gamemode) != 0 else ''}{username} | {artist} - {title} [{diff}] ({creator}, {sr}⭐️){mods} {accuracy:.2f}% {combo}{miss_string}| {round(pp.pp):,}pp {max_pp_string} ".replace("%20", " ").replace("HDDTNC", "HDNC")
-    
+    # get map status
+
+    print(status)
+    if status > 2 or status < 1:
+        beatmap_status = "if ranked" 
+    elif score_id == None and (status == 1 or status == 2) :
+        beatmap_status = "if submitted"
+    else:
+        beatmap_status = ""
+
+    print(beatmap_status)
+
+# !score_link && !approved -> unranked
+# !score_link && approved -> ranked / loved / qualified && failed / better old score
+# score_link && approved -> ranked / loved / qualified
+
+# 4 = loved, 3 = qualified, 2 = approved, 1 = ranked, 0 = pending, -1 = WIP, -2 = graveyard
+
+
+    scorepost = f"{f'[{mode_to_string(gamemode)}] ' if int(gamemode) != 0 else ''}{username} | {artist} - {title} [{diff}] ({creator}, {sr}⭐️){mods} {accuracy:.2f}% {combo}{miss_string}| {round(pp.pp):,}pp {max_pp_string} {beatmap_status} ".replace("%20", " ").replace("HDDTNC", "HDNC")
+
+    global link
+
+    link = getScoreLink(score_id, gamemode)
+
     return scorepost
 
 # start discord bot
@@ -225,10 +304,17 @@ async def on_ready():
 @bot.tree.command(name="scorepost", description="This command will generate a scorepost title you can use in /r/osugame from an user's last play")
 @app_commands.describe(osu_user="The username of the player you want to generate a scorepost title", mode="The gamemode of the player who set the play, defaults to osu!")
 @app_commands.rename(osu_user="username", mode="gamemode")
-@app_commands.Argument.required(False)
-async def scoreposter(interaction: discord.Interaction, osu_user : str, mode : Literal['osu!std','osu!mania','osu!taiko','osu!catch'] = 'osu!std'):
+# @discord.ui.Button(label="Get screenshot", emoji="🖼️" )
+async def scoreposter(interaction: discord.Interaction, osu_user : str, mode : Literal['osu!std','osu!mania','osu!taiko','osu!catch']):
+    # Get information from the function
+    title = scorepost(osu_user ,mode)
+
+
     await bot.change_presence(status=discord.Status.online, activity=discord.Game(choice(["osu!","osu!Lazer", "osu!stream"])))
-    await interaction.response.send_message(f"```{scorepost(osu_user ,mode)}```", ephemeral=False)
+    if link != None:
+        await interaction.response.send_message(f"```{title}``` {link}", ephemeral=False)
+    else:
+        await interaction.response.send_message(f"```{title}```", ephemeral=False)
 
 
 # # command for discord to request scorepost from link

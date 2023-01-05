@@ -1,4 +1,13 @@
-python-dotenv==0.21.0
-requests==2.22.0
-rosu_pp_py==0.9.1
-discord.py==2.1.0 
+# Pillow==9.4.0
+# python-dotenv==0.21.0
+# requests==2.22.0
+# rosu_pp_py==0.9.1
+# discord.py==2.1.0 
+# selenium==4.7.2
+
+Pillow
+python-dotenv
+requests
+rosu_pp_py
+discord.py 
+selenium
