@@ -10,7 +10,7 @@ a python script that generates /r/osugame scorepost titles and screenshots of sc
 5. [install python](https://www.python.org/downloads/)
 6. open your console where you have this repository in
 7. run `pip install -r requirements.txt`
-8. to use the screenshot function, (on linux), run `sudo apt install firefox-geckodriver` and set the screenshots variable in .env to "yes"
+8. to use the screenshot function, (on debian-adjacent systems) run `sudo apt install firefox-geckodriver` and set the screenshots variable in .env to "yes"
 9. if everything is successful, in your console, run `python scoreposter.py -u=[username]`
 
 for example, if you want to grab mrekk's last play:
