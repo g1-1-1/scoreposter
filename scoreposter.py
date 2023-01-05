@@ -175,16 +175,9 @@ def take_screenshot(url, crop_coordinates):
 
 def getScoreLink(score_id, gamemode):
     if score_id != None:
-        return f"Score link: https://osu.ppy.sh/scores/{mode_to_url_string(int(gamemode))}/{score_id}"
+        return f"**Score link:** https://osu.ppy.sh/scores/{mode_to_url_string(int(gamemode))}/{score_id}"
     else:
         return None
-
-    # if os.getenv("screenshots") == "yes":
-    #     take_screenshot(f"https://osu.ppy.sh/scores/{mode_to_url_string(int(gamemode))}/{score_id}", (175, 95, 1180, 640))
-    #     print(f"\nsince we have a score link and you have screenshots enabled, we have saved a snapshot of the page as 'ss.png'.")
-
-
-
 
 def scorepost(username : str, ruleset : str):
 
@@ -286,35 +279,49 @@ def scorepost(username : str, ruleset : str):
     return scorepost
 
 # start discord bot
+class Bot(commands.Bot):
+    def __init__(self):
+        intents = discord.Intents.none()
+        
+        super().__init__(command_prefix=commands.when_mentioned_or('.'), intents=intents)
 
-bot = commands.Bot(command_prefix='.', intents=discord.Intents.none())
 
-@bot.event
-async def on_ready():
-    await bot.change_presence(status=discord.Status.online, activity=discord.Game(choice(["osu!","osu!Lazer", "osu!stream"])))
-    print("Discord bot is up")
-    try:
-        synced = await bot.tree.sync()
-        print(f"Synced {len(synced)} command(s)")
-    except Exception as e:
-        print(e)
+    async def on_ready(self):
+        await bot.change_presence(status=discord.Status.online, activity=discord.Game(choice(["osu!","osu!Lazer", "osu!stream"])))
+        print("Discord bot is up")
+        try:
+            synced = await bot.tree.sync()
+            print(f"Synced {len(synced)} command(s)")
+        except Exception as e:
+            print(e)
 
+bot = Bot()
 # command for discord to request the scorepost from last play
 
 @bot.tree.command(name="scorepost", description="This command will generate a scorepost title you can use in /r/osugame from an user's last play")
 @app_commands.describe(osu_user="The username of the player you want to generate a scorepost title", mode="The gamemode of the player who set the play, defaults to osu!")
 @app_commands.rename(osu_user="username", mode="gamemode")
-# @discord.ui.Button(label="Get screenshot", emoji="🖼️" )
 async def scoreposter(interaction: discord.Interaction, osu_user : str, mode : Literal['osu!std','osu!mania','osu!taiko','osu!catch']):
     # Get information from the function
     title = scorepost(osu_user ,mode)
-
-
+    view = SS()
+    bot.ruleset = mode
     await bot.change_presence(status=discord.Status.online, activity=discord.Game(choice(["osu!","osu!Lazer", "osu!stream"])))
     if link != None:
-        await interaction.response.send_message(f"```{title}``` {link}", ephemeral=False)
+        await interaction.response.send_message(f"```{title}``` {link}", ephemeral=False, view=view)
     else:
         await interaction.response.send_message(f"```{title}```", ephemeral=False)
+
+class SS(discord.ui.View):
+    def __init__(self):
+        super().__init__()
+
+    # @discord.ui.button(label='Confirm', style=discord.ButtonStyle.green)
+    @discord.ui.button(label="Get screenshot", emoji="🖼️", style=discord.ButtonStyle.gray)
+    async def scorepost_picture(self, interaction: discord.Interaction, button : discord.ui.Button):
+        take_screenshot(f"https://osu.ppy.sh/scores/{mode_to_url_string(int(string_to_mode(bot.ruleset)))}/{score_id}", (175, 95, 1180, 640))
+        await interaction.response.send_message(file=discord.File('./ss.png'), ephemeral=False)
+        self.stop()
 
 
 # # command for discord to request scorepost from link
@@ -325,7 +332,6 @@ async def scoreposter(interaction: discord.Interaction, osu_user : str, mode : L
 # async def scoreposter(interaction: discord.Interaction, score_link : str):
 #     await interaction.response.send_message(f"{scorepost(score_link, True)}", ephemeral=False)
     
-
 bot.run(discord_token)
 
     # #regex to check if it's a score link
