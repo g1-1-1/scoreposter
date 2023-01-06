@@ -310,11 +310,12 @@ bot = Bot()
 async def scoreposter(interaction: discord.Interaction, osu_user : str, mode : Literal['osu!std','osu!mania','osu!taiko','osu!catch']):
     # Get information from the function
     title = scorepost(osu_user ,mode)
-    view = SS()
+    # view = SS()
     bot.ruleset = mode
     await bot.change_presence(status=discord.Status.online, activity=discord.Game(choice(["osu!","osu!Lazer", "osu!stream"])))
     if link != None:
-        await interaction.response.send_message(f"```{title}``` {link}", ephemeral=False, view=view)
+        # await interaction.response.send_message(f"```{title}``` {link}", ephemeral=False, view=view)
+        await interaction.response.send_message(f"```{title}``` {link}", ephemeral=False)
     else:
         await interaction.response.send_message(f"```{title}```", ephemeral=False)
 
