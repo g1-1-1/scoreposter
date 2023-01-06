@@ -36,21 +36,14 @@ mods = [
     (16384, "PF"),
 ]
 
-
 # get keys for osu and discord
 osu_api_key = os.getenv("osu_api_key")
 discord_token = os.getenv("discord_token")
 
-# check the user has put the api keys in the .env file
-
-if osu_api_key == "EDIT THIS WITH YOUR API KEY":
-    print("You need to add the osu API key in the .env file!")
-    exit()
-
-elif discord_token == "EDIT THIS WITH YOUR DISCORD BOT TOKEN":
-    print("You need to add the discord bot token in the .env file!")
-    exit()
-
+# check that the keys are present in the configuration file
+if not osu_api_key or not discord_token:
+    print("You must specify both the osu API key and the Discord bot token in the configuration file!")
+    raise LookupError
 
 def int_to_readable(value: int) -> List[str]:
     mod_names = [name for mod, name in mods if value & mod]
@@ -79,37 +72,32 @@ def int_to_santised_int(value: int) -> int:
 
 def extract_initial_data(initial_data):
     try:
-        beatmap_id, rank, score_max, n300, n100, n50, nmiss, perfect, int_mods, score_id = (
-            initial_data[0]["beatmap_id"], 
-            initial_data[0]["rank"],
+        beatmap_id, score_max, n300, n100, n50, nmiss, int_mods, score_id = (
+            initial_data[0]["beatmap_id"],
             int(initial_data[0]["maxcombo"]), 
             int(initial_data[0]["count300"]), 
             int(initial_data[0]["count100"]), 
             int(initial_data[0]["count50"]), 
             int(initial_data[0]["countmiss"]), 
-            initial_data[0]["perfect"], 
             int_to_santised_int(int(initial_data[0]["enabled_mods"])),
             initial_data[0]["score_id"]
         )
     except IndexError as e:
         print(f"an exception occurred: '{e}'; that user probably doesn't have any data available.")
         raise
-    return beatmap_id, rank, score_max, n300, n100, n50, nmiss, perfect, int_mods, score_id
+    return beatmap_id, score_max, n300, n100, n50, nmiss, int_mods, score_id
 
 def extract_map_data(map_data):
-    artist, title, creator, diff, map_max, circles, sliders, spinners, mode, status = (
+    artist, title, creator, diff, map_max, mode, status = (
         map_data[0]["artist"],
         map_data[0]["title"],
         map_data[0]["creator"],
         map_data[0]["version"],
         int(map_data[0]["max_combo"]),
-        int(map_data[0]["count_normal"]),
-        int(map_data[0]["count_slider"]),
-        int(map_data[0]["count_spinner"]),
         int(map_data[0]["mode"]),
         int(map_data[0]["approved"])
     )
-    return artist, title, creator, diff, map_max, circles, sliders, spinners, mode, status
+    return artist, title, creator, diff, map_max, mode, status
 
 def mode_to_string(mode):
     modes = {
@@ -117,15 +105,6 @@ def mode_to_string(mode):
         1: "osu!taiko",
         2: "osu!catch",
         3: "osu!mania"
-    }
-    return modes.get(mode, os.getenv("default_mode"))
-
-def mode_to_url_string(mode):
-    modes = {
-        0: "osu",
-        1: "taiko",
-        2: "fruits",
-        3: "mania"
     }
     return modes.get(mode, os.getenv("default_mode"))
 
@@ -139,9 +118,7 @@ def string_to_mode(mode):
     return modes[mode]
 
 def take_screenshot(url, crop_coordinates):
-
     # install geckodriver
-    
     geckodriver_autoinstaller.install()
 
     # start a web browser and navigate to the webpage
@@ -180,30 +157,43 @@ def take_screenshot(url, crop_coordinates):
         raise FileNotFoundError
 
 def getScoreLink(score_id, gamemode):
-    if score_id != None:
-        return f"**Score link:** https://osu.ppy.sh/scores/{mode_to_url_string(int(gamemode))}/{score_id}"
-    else:
+    if score_id == None:
         return None
 
-def scorepost(username : str, ruleset : str):
+    # map the gamemode values to URL strings
+    mode_mapping = {
+        0: "osu",
+        1: "taiko",
+        2: "fruits",
+        3: "mania"
+    }
+    
+    # look up the URL string for the given gamemode
+    mode_string = mode_mapping.get(gamemode, "osu")
+    return f"**Score link:** https://osu.ppy.sh/scores/{mode_string}/{score_id}"
 
+def scorepost(username: str, ruleset: str):
     # map mode to numbers
     gamemode = string_to_mode(ruleset)
 
     # make a request to the osu! API to retrieve the user's most recent play
-
     print(f"making initial score request for {username}...")
     initial_response_user = requests.get(f"https://osu.ppy.sh/api/get_user_recent?k={osu_api_key}&u={username}&m={gamemode}&limit=1")
 
     # parse the response as JSON
-    
     initial_data = initial_response_user.json()
 
+    # if initial_data returns an empty dictionary, then that user doesn't have any data
     if initial_data == []:
         return f"No plays done by {username} on {ruleset} recently"
-    # extract the relevant information from the response
+
+    # make the score_id global
     global score_id
-    beatmap_id, rank, score_max, n300, n100, n50, nmiss, perfect, int_mods, score_id = extract_initial_data(initial_data)
+
+    # extract the relevant information from the response
+    beatmap_id, score_max, n300, n100, n50, nmiss, int_mods, score_id = extract_initial_data(initial_data)
+
+    # convert the integer mods to a readable string
     readable_mods = int_to_readable(int(int_mods))
 
     print("done!")
@@ -211,7 +201,7 @@ def scorepost(username : str, ruleset : str):
 
     map_response = requests.get(f"https://osu.ppy.sh/api/get_beatmaps?k={osu_api_key}&b={beatmap_id}&limit=1")
     map_data = map_response.json()
-    artist, title, creator, diff, map_max, circles, sliders, spinners, mode, status = extract_map_data(map_data)
+    artist, title, creator, diff, map_max, mode, status = extract_map_data(map_data)
 
     print("done!")
     print(f"creating the scorepost for {username} latest's play...")
@@ -259,27 +249,28 @@ def scorepost(username : str, ruleset : str):
 
     # get map status
 
-    print(status)
-    if status > 2 or status < 1:
-        beatmap_status = "if ranked" 
-    elif score_id == None and (status == 1 or status == 2) :
-        beatmap_status = "if submitted"
+    # Map the status values to strings
+    status_mapping = {
+        -2: "if ranked",
+        -1: "if ranked",
+        0: "if ranked",
+        1: "if submitted",
+        2: "if submitted",
+        3: "if ranked",
+        4: "if ranked"
+    }
+
+    # check if score_id is not None
+    if score_id is not None:
+        # assign a value to beatmap_status based on the status value
+        beatmap_status = status_mapping.get(status, "")
     else:
+        # set beatmap_status to an empty string if score_id is None
         beatmap_status = ""
-
-    print(beatmap_status)
-
-# !score_link && !approved -> unranked
-# !score_link && approved -> ranked / loved / qualified && failed / better old score
-# score_link && approved -> ranked / loved / qualified
-
-# 4 = loved, 3 = qualified, 2 = approved, 1 = ranked, 0 = pending, -1 = WIP, -2 = graveyard
-
 
     scorepost = f"{f'[{mode_to_string(gamemode)}] ' if int(gamemode) != 0 else ''}{username} | {artist} - {title} [{diff}] ({creator}, {sr}⭐️){mods} {accuracy:.2f}% {combo}{miss_string}| {round(pp.pp):,}pp {max_pp_string} {beatmap_status} ".replace("%20", " ").replace("HDDTNC", "HDNC")
 
     global link
-
     link = getScoreLink(score_id, gamemode)
 
     return scorepost
@@ -288,9 +279,7 @@ def scorepost(username : str, ruleset : str):
 class Bot(commands.Bot):
     def __init__(self):
         intents = discord.Intents.none()
-        
         super().__init__(command_prefix=commands.when_mentioned_or('.'), intents=intents)
-
 
     async def on_ready(self):
         await bot.change_presence(status=discord.Status.online, activity=discord.Game(choice(["osu!","osu!Lazer", "osu!stream"])))
@@ -302,14 +291,14 @@ class Bot(commands.Bot):
             print(e)
 
 bot = Bot()
-# command for discord to request the scorepost from last play
 
+# command for discord to request the scorepost from last play
 @bot.tree.command(name="scorepost", description="This command will generate a scorepost title you can use in /r/osugame from an user's last play")
 @app_commands.describe(osu_user="The username of the player you want to generate a scorepost title", mode="The gamemode of the player who set the play, defaults to osu!")
 @app_commands.rename(osu_user="username", mode="gamemode")
-async def scoreposter(interaction: discord.Interaction, osu_user : str, mode : Literal['osu!std','osu!mania','osu!taiko','osu!catch']):
+async def scoreposter(interaction: discord.Interaction, osu_user: str, mode: Literal['osu!std','osu!mania','osu!taiko','osu!catch']):
     # Get information from the function
-    title = scorepost(osu_user ,mode)
+    title = scorepost(osu_user, mode)
     # view = SS()
     bot.ruleset = mode
     await bot.change_presence(status=discord.Status.online, activity=discord.Game(choice(["osu!","osu!Lazer", "osu!stream"])))
@@ -325,7 +314,7 @@ class SS(discord.ui.View):
 
     # @discord.ui.button(label='Confirm', style=discord.ButtonStyle.green)
     @discord.ui.button(label="Get screenshot", emoji="🖼️", style=discord.ButtonStyle.gray)
-    async def scorepost_picture(self, interaction: discord.Interaction, button : discord.ui.Button):
+    async def scorepost_picture(self, interaction: discord.Interaction, button: discord.ui.Button):
         take_screenshot(f"https://osu.ppy.sh/scores/{mode_to_url_string(int(string_to_mode(bot.ruleset)))}/{score_id}", (175, 95, 1180, 640))
         await interaction.response.send_message(file=discord.File('./ss.png'), ephemeral=False)
         self.stop()
@@ -357,3 +346,8 @@ bot.run(discord_token)
     
     # elif link and re.search("https://osu\.ppy\.sh/scores/[a-zA-Z]+//([1-9][0-9]*)|0/", username) == False:
     #     return "Not an osu! score link"
+    # !score_link && !approved -> unranked
+    # !score_link && approved -> ranked / loved / qualified && failed / better old score
+    # score_link && approved -> ranked / loved / qualified
+
+    # 4 = loved, 3 = qualified, 2 = approved, 1 = ranked, 0 = pending, -1 = WIP, -2 = graveyard
