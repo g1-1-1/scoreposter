@@ -56,15 +56,13 @@ def int_to_santised_int(value: int) -> int:
 
 def extract_initial_data(initial_data):
     try:
-        beatmap_id, rank, score_max, n300, n100, n50, nmiss, perfect, int_mods, score_id = (
+        beatmap_id, score_max, n300, n100, n50, nmiss, int_mods, score_id = (
             initial_data[0]["beatmap_id"], 
-            initial_data[0]["rank"], 
             int(initial_data[0]["maxcombo"]), 
             int(initial_data[0]["count300"]), 
             int(initial_data[0]["count100"]), 
             int(initial_data[0]["count50"]), 
             int(initial_data[0]["countmiss"]), 
-            initial_data[0]["perfect"], 
             int_to_santised_int(int(initial_data[0]["enabled_mods"])),
             initial_data[0]["score_id"]
         )
@@ -72,21 +70,19 @@ def extract_initial_data(initial_data):
         print(f"an exception occurred: '{e}'; that user probably doesn't have any data available.")
         raise
 
-    return beatmap_id, rank, score_max, n300, n100, n50, nmiss, perfect, int_mods, score_id
+    return beatmap_id, score_max, n300, n100, n50, nmiss, int_mods, score_id
 
 def extract_map_data(map_data):
-    artist, title, creator, diff, map_max, circles, sliders, spinners, mode = (
+    artist, title, creator, diff, map_max, mode, status = (
         map_data[0]["artist"],
         map_data[0]["title"],
         map_data[0]["creator"],
         map_data[0]["version"],
         int(map_data[0]["max_combo"]),
-        int(map_data[0]["count_normal"]),
-        int(map_data[0]["count_slider"]),
-        int(map_data[0]["count_spinner"]),
-        int(map_data[0]["mode"])
+        int(map_data[0]["mode"]),
+        int(map_data[0]["approved"])
     )
-    return artist, title, creator, diff, map_max, circles, sliders, spinners, mode
+    return artist, title, creator, diff, map_max, mode, status
 
 def mode_to_string(mode):
     modes = {
@@ -164,7 +160,7 @@ initial_response = requests.get(f"https://osu.ppy.sh/api/get_user_recent?k={api_
 # parse the response as JSON
 initial_data = initial_response.json()
 # extract using function and assign tuple to variables
-beatmap_id, rank, score_max, n300, n100, n50, nmiss, perfect, int_mods, score_id = extract_initial_data(initial_data)
+beatmap_id, score_max, n300, n100, n50, nmiss, int_mods, score_id = extract_initial_data(initial_data)
 
 # tell user we've finished that request
 print("made!")
@@ -173,7 +169,7 @@ print("making the score's map request...")
 
 map_response = requests.get(f"https://osu.ppy.sh/api/get_beatmaps?k={api_key}&b={beatmap_id}&limit=1")
 map_data = map_response.json()
-artist, title, creator, diff, map_max, circles, sliders, spinners, mode = extract_map_data(map_data)
+artist, title, creator, diff, map_max, mode, status = extract_map_data(map_data)
 
 print("made!")
 # tell the user we're now going to create the scorepost (all we really have to do left is calculate pp)
@@ -222,7 +218,30 @@ else:
         max_pp = calc.performance(map)
         max_pp_string = f"({round(max_pp.pp):,}pp if FC)"
 
-scorepost = f"{f'({mode_to_string(int(args.mode))}) ' if int(args.mode) != 0 else ''}{args.username} | {artist} - {title} [{diff}] (mapped by {creator}, {sr}⭐️){mods} {accuracy:.2f}% {combo}{miss_string}{round(pp.pp):,}pp {max_pp_string} ".replace("%20", " ").replace("HDDTNC", "HDNC")
+# map the status values to strings
+status_mapping = {
+    -2: "if ranked",
+    -1: "if ranked",
+    0: "if ranked",
+    1: "if submitted",
+    2: "if submitted",
+    3: "if ranked",
+    4: "if ranked"
+}
+
+# check if score_id is not None
+if score_id is not None:
+    # assign a value to beatmap_status based on the status value
+    if_status = status_mapping.get(status, "")
+else:
+    # set beatmap_status to an empty string if score_id is None
+    if_status = ""
+
+scorepost = (
+    f"{f'({mode_to_string(int(args.mode))}) ' if int(args.mode) != 0 else ''}"
+    f"{args.username} | {artist} - {title} [{diff}] (mapped by {creator}, {sr}⭐️){mods} "
+    f"{accuracy:.2f}% {combo}{miss_string}{round(pp.pp):,}pp {max_pp_string} {if_status}"
+).replace("%20", " ")
 
 # print the scorepost to the console
 print(f"\n{scorepost}")
