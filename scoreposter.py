@@ -220,17 +220,17 @@ else:
 
 # map the status values to strings
 status_mapping = {
-    -2: "if ranked",
-    -1: "if ranked",
-    0: "if ranked",
-    1: "if submitted",
-    2: "if submitted",
-    3: "if ranked",
-    4: "if ranked"
+    -2: "(if ranked)",
+    -1: "(if ranked)",
+    0: "(if ranked)",
+    1: "(if submitted)",
+    2: "(if submitted)",
+    3: "(if ranked)",
+    4: "(if ranked)"
 }
 
-# check if score_id is not None
-if score_id is not None:
+# check if score_id is None
+if score_id is None or int(status) in (-2, -1, 0, 3, 4):
     # assign a value to beatmap_status based on the status value
     if_status = status_mapping.get(status, "")
 else:
