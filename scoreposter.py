@@ -32,12 +32,13 @@ mods = [
 def int_to_readable(value: int) -> List[str]:
     mod_names = [name for mod, name in mods if value & mod]
 
-    # Check for invalid combinations
+    # check for invalid combinations
     if "SD" in mod_names and "PF" in mod_names:
+        # remove "SD" and return "PF" if both are in a string
         mod_names.remove("SD")
         return mod_names
     if "DT" in mod_names and "NC" in mod_names:
-        # Remove "DT" and return "HD" and "NC"
+        # same logic here
         mod_names.remove("DT")
         return mod_names
 
