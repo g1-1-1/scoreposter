@@ -4,6 +4,8 @@ import os
 from selenium import webdriver
 from selenium.webdriver import FirefoxOptions
 from selenium.webdriver.support.ui import WebDriverWait
+from circleguard import Circleguard
+from circleguard import ReplayString
 from PIL import Image
 from typing import List
 from rosu_pp_py import Beatmap, Calculator
@@ -32,13 +34,12 @@ mods = [
 def int_to_readable(value: int) -> List[str]:
     mod_names = [name for mod, name in mods if value & mod]
 
-    # check for invalid combinations
+    # Check for invalid combinations
     if "SD" in mod_names and "PF" in mod_names:
-        # remove "SD" and return "PF" if both are in a string
         mod_names.remove("SD")
         return mod_names
     if "DT" in mod_names and "NC" in mod_names:
-        # same logic here
+        # Remove "DT" and return "HD" and "NC"
         mod_names.remove("DT")
         return mod_names
 
@@ -55,9 +56,20 @@ def int_to_santised_int(value: int) -> int:
                 combined_value |= mod
         return combined_value
 
+def needs_conversion(value: int) -> bool:
+    if value == 0:
+        return False
+    else:
+        mods_to_check = [512, 256, 64, 16] # NC, HT, DT, HR, EZ
+        combined_value = 0
+        for mod in mods_to_check:
+            if value & mod:
+                combined_value |= mod
+        return True
+
 def extract_initial_data(initial_data):
     try:
-        beatmap_id, score_max, n300, n100, n50, nmiss, int_mods, score_id = (
+        beatmap_id, score_max, n300, n100, n50, nmiss, int_mods, score_id, user_id = (
             initial_data[0]["beatmap_id"], 
             int(initial_data[0]["maxcombo"]), 
             int(initial_data[0]["count300"]), 
@@ -65,13 +77,14 @@ def extract_initial_data(initial_data):
             int(initial_data[0]["count50"]), 
             int(initial_data[0]["countmiss"]), 
             int_to_santised_int(int(initial_data[0]["enabled_mods"])),
-            initial_data[0]["score_id"]
+            initial_data[0]["score_id"],
+            initial_data[0]["user_id"]
         )
     except IndexError as e:
         print(f"an exception occurred: '{e}'; that user probably doesn't have any data available.")
         raise
 
-    return beatmap_id, score_max, n300, n100, n50, nmiss, int_mods, score_id
+    return beatmap_id, score_max, n300, n100, n50, nmiss, int_mods, score_id, user_id
 
 def extract_map_data(map_data):
     artist, title, creator, diff, map_max, mode, status = (
@@ -155,27 +168,43 @@ if int(args.mode) not in (0, 1, 2, 3):
 
 # tell the user we're about to make the initial request
 print("making initial score request...")
-
 # make a request to the osu! API to retrieve the user's most recent play
 initial_response = requests.get(f"https://osu.ppy.sh/api/get_user_recent?k={api_key}&u={args.username}&m={int(args.mode)}&limit=1")
 # parse the response as JSON
 initial_data = initial_response.json()
 # extract using function and assign tuple to variables
-beatmap_id, score_max, n300, n100, n50, nmiss, int_mods, score_id = extract_initial_data(initial_data)
-
+beatmap_id, score_max, n300, n100, n50, nmiss, int_mods, score_id, user_id = extract_initial_data(initial_data)
 # tell user we've finished that request
 print("made!")
+
 # then tell them we're moving to the next required request
 print("making the score's map request...")
-
 map_response = requests.get(f"https://osu.ppy.sh/api/get_beatmaps?k={api_key}&b={beatmap_id}&limit=1")
 map_data = map_response.json()
 artist, title, creator, diff, map_max, mode, status = extract_map_data(map_data)
-
 print("made!")
+
+# now we're going to announce we're grabbing replay data
+print("attempting to grab replay..")
+# and grab replay data
+circleguard = Circleguard(api_key)
+try:
+    replay = circleguard.ReplayMap(beatmap_id, user_id)
+    if needs_conversion(int_mods) is True and score_id is not None:
+        replay_ur = f" {round(circleguard.ur(replay, cv=True), 2)} cv. UR"
+        print("made!")
+    elif score_id is None or int(status) in (-2, -1, 0, 3, 4):
+        replay_ur = ""
+        print("made, however the score cannot be calculated for UR; so it is empty.")
+    else:
+        replay_ur = f" {round(circleguard.ur(replay, cv=True), 2)} UR"
+        print("made!")
+except Exception as e:
+    print("couldn't find replay! skipping UR calculation...")
+    replay_ur = ""
+
 # tell the user we're now going to create the scorepost (all we really have to do left is calculate pp)
 print("creating the scorepost...")
-
 try:
     # grab the .osu file so we can do calculations locally
     get_osu_file = requests.get(f"https://old.ppy.sh/osu/{beatmap_id}", stream=True)
@@ -241,7 +270,7 @@ else:
 scorepost = (
     f"{f'({mode_to_string(int(args.mode))}) ' if int(args.mode) != 0 else ''}"
     f"{args.username} | {artist} - {title} [{diff}] (mapped by {creator}, {sr}⭐️){mods} "
-    f"{accuracy:.2f}% {combo}{miss_string}{round(pp.pp):,}pp {max_pp_string} {if_status}"
+    f"{accuracy:.2f}% {combo}{miss_string}{round(pp.pp):,}pp{replay_ur} {max_pp_string} {if_status}"
 ).replace("%20", " ")
 
 # print the scorepost to the console
