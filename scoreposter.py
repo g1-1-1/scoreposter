@@ -237,7 +237,11 @@ if score_max - 20 <= map_max and nmiss == 0:
 else:
     if nmiss == 0:
         combo = f"{int(score_max):,}x/{int(map_max):,}x "
-        max_pp_string = ""
+        calc.set_n_misses(0)
+        calc.set_combo(int(map_max))
+        calc.set_mods(int_mods)
+        max_pp = calc.performance(map)
+        max_pp_string = f"({round(max_pp.pp):,}pp if FC)"
         miss_string = ""
     else:
         miss_string = f" {nmiss}❌ "
@@ -276,7 +280,7 @@ scorepost = (
 # print the scorepost to the console
 print(f"\n{scorepost}")
 
-if score_id != None:
+if score_id is not None:
     print(f"\nhere's the score link, on osu!: https://osu.ppy.sh/scores/{mode_to_url_string(int(args.mode))}/{score_id}")
     if os.getenv("screenshots") == "yes":
         take_screenshot(f"https://osu.ppy.sh/scores/{mode_to_url_string(int(args.mode))}/{score_id}", (175, 95, 1180, 640))
