@@ -1,5 +1,6 @@
+circleguard==5.3.0
 Pillow==9.4.0
-python-dotenv==0.21.0
+python-dotenv==0.21.1
 requests==2.22.0
-rosu_pp_py==0.9.1
-selenium==4.7.2
+rosu_pp_py==0.9.4
+selenium==4.8.2
