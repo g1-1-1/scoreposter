@@ -190,17 +190,18 @@ print("attempting to grab replay..")
 circleguard = Circleguard(api_key)
 try:
     replay = circleguard.ReplayMap(beatmap_id, user_id)
-    if needs_conversion(int_mods) is True and score_id is not None:
-        replay_ur = f" {round(circleguard.ur(replay, cv=True), 2)} cv. UR"
-        print("made!")
-    elif score_id is None or int(status) in (-2, -1, 0, 3, 4):
+    if int(status) not in (-2, -1, 0, 3, 4):
+        if needs_conversion(int_mods) is True:
+            replay_ur = f"{round(circleguard.ur(replay, cv=True), 2)} cv. UR "
+            print("made!")
+        else:
+            replay_ur = f"{round(circleguard.ur(replay, cv=True), 2)} UR "
+            print("made!")
+    else:
         replay_ur = ""
         print("made, however the score cannot be calculated for UR; so it is empty.")
-    else:
-        replay_ur = f" {round(circleguard.ur(replay, cv=True), 2)} UR"
-        print("made!")
 except Exception as e:
-    print("couldn't find replay! skipping UR calculation...")
+    print(f"couldn't find replay! skipping UR calculation... {e}")
     replay_ur = ""
 
 # tell the user we're now going to create the scorepost (all we really have to do left is calculate pp)
@@ -223,6 +224,9 @@ accuracy = min(100.0 * ((n300 * 300.0) + (n100 * 100.0) + (n50 * 50.0)) / ((n300
 map = Beatmap(bytes=open("beatmap.osu", "rb").read())
 calc = Calculator(mode=mode)
 calc.set_acc(accuracy)
+calc.set_n300(n300)
+calc.set_n100(n100)
+calc.set_n50(n50)
 calc.set_mods(int_mods)
 calc.set_n_misses(nmiss)
 calc.set_combo(score_max)
@@ -239,6 +243,9 @@ else:
         combo = f"{int(score_max):,}x/{int(map_max):,}x "
         calc.set_n_misses(0)
         calc.set_combo(int(map_max))
+        calc.set_n300(n300)
+        calc.set_n100(n100)
+        calc.set_n50(n50)
         calc.set_mods(int_mods)
         max_pp = calc.performance(map)
         max_pp_string = f"({round(max_pp.pp):,}pp if FC)"
@@ -274,7 +281,7 @@ else:
 scorepost = (
     f"{f'({mode_to_string(int(args.mode))}) ' if int(args.mode) != 0 else ''}"
     f"{args.username} | {artist} - {title} [{diff}] (mapped by {creator}, {sr}⭐️){mods} "
-    f"{accuracy:.2f}% {combo}{miss_string}{round(pp.pp):,}pp{replay_ur} {max_pp_string} {if_status}"
+    f"{accuracy:.2f}% {combo}{miss_string}{replay_ur}{round(pp.pp):,}pp {max_pp_string} {if_status}"
 ).replace("%20", " ")
 
 # print the scorepost to the console
