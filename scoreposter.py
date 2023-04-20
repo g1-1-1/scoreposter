@@ -261,13 +261,13 @@ else:
 
 # map the status values to strings
 status_mapping = {
-    -2: "(if ranked)",
-    -1: "(if ranked)",
-    0: "(if ranked)",
-    1: "(if submitted)",
-    2: "(if submitted)",
-    3: "(if ranked)",
-    4: "(if ranked)"
+    -2: "if ranked ",
+    -1: "if ranked ",
+    0: "if ranked ",
+    1: "if submitted ",
+    2: "if submitted ",
+    3: "if ranked ",
+    4: "if ranked "
 }
 
 # check if score_id is None
@@ -281,7 +281,7 @@ else:
 scorepost = (
     f"{f'({mode_to_string(int(args.mode))}) ' if int(args.mode) != 0 else ''}"
     f"{args.username} | {artist} - {title} [{diff}] (mapped by {creator}, {sr}⭐️){mods} "
-    f"{accuracy:.2f}% {combo}{miss_string}{replay_ur}{round(pp.pp):,}pp {max_pp_string} {if_status}"
+    f"{accuracy:.2f}% {combo}{miss_string}{replay_ur}| {round(pp.pp):,}pp {if_status}{max_pp_string}"
 ).replace("%20", " ")
 
 # print the scorepost to the console
